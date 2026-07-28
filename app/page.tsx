@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 type TestDefinition = {
   slug: string;
@@ -36,6 +36,15 @@ const tests: TestDefinition[] = [
   { slug: "autismo", title: "Autismo em adultos", description: "Explore padrões de interação, sensibilidade e rotina.", time: "5 min", active: false },
 ];
 
+const activeTest = tests[0];
+const questions = activeTest.questions ?? [];
+const whatsappNumber =
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") ?? "";
+const whatsappMessage = encodeURIComponent(
+  "Olá, gostaria de saber mais sobre uma consulta com o Dr. Marcel.",
+);
+const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
 type TestStep = "intro" | "questions" | "email" | "result";
 
 export default function Home() {
@@ -46,12 +55,11 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, boolean>>({});
-  const activeTest = tests[0];
-  const questions = activeTest.questions ?? [];
 
-  const score = useMemo(
-    () => questions.reduce((total, question) => total + (answers[question.id] ? question.weight : 0), 0),
-    [answers, questions],
+  const score = questions.reduce(
+    (total, question) =>
+      total + (answers[question.id] ? question.weight : 0),
+    0,
   );
   const maxScore = questions.reduce((total, question) => total + question.weight, 0);
   const ratio = maxScore ? score / maxScore : 0;
@@ -205,7 +213,7 @@ export default function Home() {
         <span className="section-index light">05 — Próximo passo</span>
         <h2>Você não precisa entender tudo sozinho.</h2>
         <p>Se algo tem causado sofrimento ou interferido na sua rotina, uma conversa cuidadosa pode ajudar.</p>
-        <a className="button ivory" href="https://wa.me/?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20uma%20consulta%20com%20o%20Dr.%20Marcel." target="_blank" rel="noreferrer">Agendar pelo WhatsApp <span aria-hidden="true">↗</span></a>
+        <a className="button ivory" href={whatsappUrl} target="_blank" rel="noreferrer">Agendar pelo WhatsApp <span aria-hidden="true">↗</span></a>
         <small>Atendimento por mensagem · Retorno em horário comercial</small>
       </section>
 
