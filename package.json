@@ -12,6 +12,7 @@
     "start": "next start",
     "test": "node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "validate:hostinger": "node scripts/validate-hostinger.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

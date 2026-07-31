@@ -36,9 +36,12 @@ pnpm build
 pnpm start
 pnpm lint
 pnpm test
+pnpm validate:hostinger
 ```
 
 O endpoint `/api/health` confirma que o back-end Node.js está respondendo.
+
+Consulte também o roteiro de implantação, verificação e rollback em [`docs/HOSTINGER.md`](docs/HOSTINGER.md).
 
 ## Implantação na Hostinger
 
