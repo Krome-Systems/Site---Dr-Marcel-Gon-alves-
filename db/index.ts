@@ -1,13 +1,23 @@
-import { env } from "cloudflare:workers";
-import { drizzle } from "drizzle-orm/d1";
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql, { type Pool } from "mysql2/promise";
 import * as schema from "./schema";
 
+let pool: Pool | undefined;
+
 export function getDb() {
-  if (!env.DB) {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
     throw new Error(
-      "Cloudflare D1 binding `DB` is unavailable. Set the `d1` field in .openai/hosting.json to `DB` or let your control plane inject the real binding values before using the database."
+      "DATABASE_URL não foi configurada. Adicione a conexão MySQL nas variáveis de ambiente da Hostinger antes de usar o banco.",
     );
   }
 
-  return drizzle(env.DB, { schema });
+  pool ??= mysql.createPool({
+    uri: databaseUrl,
+    connectionLimit: 10,
+    enableKeepAlive: true,
+  });
+
+  return drizzle(pool, { schema, mode: "default" });
 }
