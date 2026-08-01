@@ -37,10 +37,10 @@ test("uses the Hostinger-compatible Next.js runtime", async () => {
   assert.doesNotMatch(db, /cloudflare:workers|D1/);
 });
 
-test("declares the Netlify Next.js build output", async () => {
+test("lets the Netlify OpenNext adapter configure the publish output", async () => {
   const netlify = await readFile(new URL("../netlify.toml", import.meta.url), "utf8");
 
-  assert.match(netlify, /command = "pnpm build"/);
-  assert.match(netlify, /publish = "\.next"/);
   assert.match(netlify, /NODE_VERSION = "22\.22\.0"/);
+  assert.doesNotMatch(netlify, /publish\s*=/);
+  assert.doesNotMatch(netlify, /command\s*=/);
 });

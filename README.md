@@ -72,9 +72,9 @@ Não envie `node_modules`, `.next` ou arquivos `.env*`.
 
 ## Demonstração temporária na Netlify
 
-A Netlify detecta automaticamente o Next.js, usa `pnpm build` e publica a saída `.next`. O arquivo `.nvmrc` fixa o Node.js 22.22.0 para evitar incompatibilidades entre versões antigas do Corepack e a assinatura do pnpm.
+A Netlify detecta automaticamente o Next.js e aplica o adaptador OpenNext para preparar as rotas e funções do site. O arquivo `.nvmrc` fixa o Node.js 22.22.0 para evitar incompatibilidades entre versões antigas do Corepack e a assinatura do pnpm.
 
-O arquivo `netlify.toml` registra essas opções no repositório e prevalece sobre uma pasta de publicação incorreta configurada manualmente no painel.
+O arquivo `netlify.toml` registra somente a versão do Node. Não force `.next` como pasta de publicação: isso envia os arquivos internos do framework sem gerar o runtime necessário na Netlify.
 
 Não configure `COREPACK_INTEGRITY_KEYS=0`: desativar essa verificação criptográfica não é necessário para este projeto.
 
