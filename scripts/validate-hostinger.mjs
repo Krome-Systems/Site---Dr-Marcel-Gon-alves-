@@ -23,9 +23,11 @@ const [healthRoute, lockfile] = await Promise.all([
 ]);
 
 const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
-const supportedNode = nodeMajor > 22 || (nodeMajor === 22 && nodeMinor >= 13);
+const supportedNode =
+  (nodeMajor === 22 && nodeMinor >= 22) ||
+  (nodeMajor > 22 && nodeMajor < 25);
 
-check("Node.js 22.13+", supportedNode, process.versions.node);
+check("Node.js 22.22+ ou 24.x", supportedNode, process.versions.node);
 check("Gerenciador pnpm declarado", packageJson.packageManager?.startsWith("pnpm@"), packageJson.packageManager ?? "ausente");
 check("Comando de build", packageJson.scripts?.build === "next build", packageJson.scripts?.build ?? "ausente");
 check("Comando de start", packageJson.scripts?.start === "next start", packageJson.scripts?.start ?? "ausente");

@@ -11,7 +11,7 @@ Todo o cálculo acontece no navegador. Respostas e resultados não são enviados
 
 ## Requisitos
 
-- Node.js 22.13 ou superior
+- Node.js 22.22 ou 24.x
 - pnpm 11.9 ou superior
 - Git
 
@@ -69,6 +69,12 @@ Use um plano **Business Web Hosting** ou **Cloud** com suporte a Node.js Web App
 7. Faça o deploy e valide `/` e `/api/health`.
 
 Não envie `node_modules`, `.next` ou arquivos `.env*`.
+
+## Demonstração temporária na Netlify
+
+A Netlify detecta automaticamente o Next.js, usa `pnpm build` e publica a saída `.next`. O arquivo `.nvmrc` fixa o Node.js 22.22.0 para evitar incompatibilidades entre versões antigas do Corepack e a assinatura do pnpm.
+
+Não configure `COREPACK_INTEGRITY_KEYS=0`: desativar essa verificação criptográfica não é necessário para este projeto.
 
 ## Banco de dados
 

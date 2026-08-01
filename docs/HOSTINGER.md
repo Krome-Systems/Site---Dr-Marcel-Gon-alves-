@@ -4,7 +4,7 @@ Este documento complementa o README com uma lista objetiva para implantação, v
 
 ## Antes do deploy
 
-1. Use Node.js 22.13 ou superior e pnpm 11.9 ou superior.
+1. Use Node.js 22.22 ou 24.x e pnpm 11.9 ou superior.
 2. Execute `pnpm install --frozen-lockfile`.
 3. Execute `pnpm validate:hostinger`.
 4. Execute `pnpm test` e `pnpm build`.
