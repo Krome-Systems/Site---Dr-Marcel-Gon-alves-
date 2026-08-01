@@ -30,6 +30,8 @@ Variáveis esperadas:
 
 1. Abra `/api/health` e confirme uma resposta HTTP 200.
 2. Abra a página inicial e conclua uma triagem de teste.
+   - TDAH: confirme que o resumo separa sinais atuais, infância, duração e áreas de prejuízo.
+   - Ansiedade: confirme que a soma varia de 0 a 21 e exibe a faixa correspondente.
 3. Confira o link do WhatsApp em celular e desktop.
 4. Compartilhe a URL em uma mensagem e confira a imagem social.
 5. Verifique os logs da aplicação para erros de inicialização ou conexão.
@@ -44,3 +46,5 @@ Se a nova versão não iniciar:
 4. Valide novamente `/api/health` e a página inicial.
 
 Nunca copie dados clínicos ou credenciais para logs, issues ou commits.
+
+As triagens desta versão são processadas integralmente no navegador e não dependem do banco de dados. O endpoint Node.js e a camada MySQL permanecem preparados para uma futura funcionalidade de persistência, que só deve ser ativada após a definição do fluxo de consentimento e proteção de dados.

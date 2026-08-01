@@ -2,6 +2,13 @@
 
 Site institucional e plataforma de triagens educativas do Instituto Dr. Marcel Gonçalves. A aplicação usa Next.js em Node.js e está preparada para implantação como Node.js Web App na Hostinger.
 
+As triagens disponíveis são:
+
+- **TDAH em adultos:** organização pré-clínica dos 18 grupos de sintomas, sinais atuais e infantis, duração e prejuízo em diferentes contextos. Não reproduz nem substitui a entrevista profissional DIVA-5.
+- **Ansiedade:** GAD-7, com sete itens, período de duas semanas e faixas de pontuação de 0 a 21.
+
+Todo o cálculo acontece no navegador. Respostas e resultados não são enviados nem persistidos.
+
 ## Requisitos
 
 - Node.js 22.13 ou superior
@@ -83,4 +90,6 @@ pnpm db:generate
 
 ## Segurança clínica
 
-Resultados de rastreios nunca devem ser apresentados como diagnóstico. O conteúdo não substitui avaliação médica. Antes de armazenar nomes, e-mails ou respostas, implemente consentimento explícito, política de privacidade, controle de acesso, criptografia, logs e rotina de exclusão.
+Resultados de rastreios nunca devem ser apresentados como diagnóstico. O conteúdo não substitui avaliação médica nem autoriza recomendações de medicação. A entrevista DIVA-5 é protegida por direitos autorais e sua reprodução eletrônica exige autorização da DIVA Foundation; por isso, este projeto usa conteúdo próprio e apenas preserva os eixos clínicos necessários para preparar uma avaliação.
+
+Antes de armazenar nomes, contatos ou respostas, implemente consentimento explícito, política de privacidade, finalidade definida, controle de acesso, criptografia, logs e rotina de exclusão em conformidade com a LGPD.

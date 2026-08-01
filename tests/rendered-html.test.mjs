@@ -2,14 +2,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("contains the institutional content and clinical disclaimer", async () => {
+test("contains the institutional content and clinical safeguards", async () => {
   const [page, layout] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /Diagnóstico cuidadoso/);
-  assert.match(page, /nunca representa diagnóstico médico/);
+  assert.match(page, /não é um diagnóstico/);
+  assert.match(page, /18 grupos de sinais/);
+  assert.match(page, /antes dos 12 anos/);
+  assert.match(page, /GAD‑7/);
+  assert.match(page, /CVV 188/);
   assert.match(page, /NEXT_PUBLIC_WHATSAPP_NUMBER/);
   assert.match(layout, /Instituto Dr\. Marcel Gonçalves/);
   assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
