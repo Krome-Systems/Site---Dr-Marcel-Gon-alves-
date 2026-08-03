@@ -13,6 +13,9 @@ test("contains the institutional content and clinical safeguards", async () => {
   assert.match(page, /18 grupos de sinais/);
   assert.match(page, /antes dos 12 anos/);
   assert.match(page, /GAD‑7/);
+  assert.match(page, /PHQ‑9/);
+  assert.match(page, /estrutura do MDQ/);
+  assert.match(page, /Este resultado não é um diagnóstico/);
   assert.match(page, /CVV 188/);
   assert.match(page, /NEXT_PUBLIC_WHATSAPP_NUMBER/);
   assert.match(layout, /Instituto Dr\. Marcel Gonçalves/);
@@ -43,4 +46,16 @@ test("lets the Netlify OpenNext adapter configure the publish output", async () 
   assert.match(netlify, /NODE_VERSION = "22\.22\.0"/);
   assert.doesNotMatch(netlify, /publish\s*=/);
   assert.doesNotMatch(netlify, /command\s*=/);
+});
+
+test("provides an isolated static preview build", async () => {
+  const [packageJson, nextConfig, staticBuilder] = await Promise.all([
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../next.config.ts", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/build-static.mjs", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(packageJson, /"build:static": "node scripts\/build-static\.mjs"/);
+  assert.match(nextConfig, /output: "export"/);
+  assert.match(staticBuilder, /STATIC_EXPORT: "1"/);
 });

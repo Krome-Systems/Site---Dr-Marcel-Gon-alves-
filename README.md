@@ -6,6 +6,8 @@ As triagens disponíveis são:
 
 - **TDAH em adultos:** organização pré-clínica dos 18 grupos de sintomas, sinais atuais e infantis, duração e prejuízo em diferentes contextos. Não reproduz nem substitui a entrevista profissional DIVA-5.
 - **Ansiedade:** GAD-7, com sete itens, período de duas semanas e faixas de pontuação de 0 a 21.
+- **Sintomas depressivos:** PHQ-9, com nove itens, período de duas semanas, impacto funcional e faixas de intensidade de 0 a 27. Qualquer resposta no item de segurança mostra orientação imediata para apoio humano.
+- **Sinais de bipolaridade:** rastreio estruturado pelos eixos do MDQ: quantidade de sinais ao longo da vida, ocorrência no mesmo período e prejuízo associado. Um padrão de rastreio não equivale a diagnóstico.
 
 Todo o cálculo acontece no navegador. Respostas e resultados não são enviados nem persistidos.
 
@@ -78,6 +80,8 @@ O arquivo `netlify.toml` registra somente a versão do Node. Não force `.next` 
 
 Não configure `COREPACK_INTEGRITY_KEYS=0`: desativar essa verificação criptográfica não é necessário para este projeto.
 
+Para uma demonstração por upload manual, execute `pnpm build:static`. O comando cria a pasta `out`, contendo somente HTML, CSS e JavaScript prontos para arrastar no Netlify Drop. Esse modo é exclusivo para demonstração; o build normal da Hostinger continua sendo `pnpm build` e `pnpm start`.
+
 ## Banco de dados
 
 A camada de dados usa Drizzle ORM com MySQL/MariaDB. O schema permanece vazio intencionalmente: dados de triagem são dados sensíveis e só devem ser persistidos depois da definição de consentimento, finalidade, retenção, controle de acesso e demais requisitos da LGPD.
@@ -98,6 +102,8 @@ pnpm db:generate
 
 ## Segurança clínica
 
-Resultados de rastreios nunca devem ser apresentados como diagnóstico. O conteúdo não substitui avaliação médica nem autoriza recomendações de medicação. A entrevista DIVA-5 é protegida por direitos autorais e sua reprodução eletrônica exige autorização da DIVA Foundation; por isso, este projeto usa conteúdo próprio e apenas preserva os eixos clínicos necessários para preparar uma avaliação.
+Resultados de rastreios nunca devem ser apresentados como diagnóstico. O conteúdo não substitui avaliação médica nem autoriza recomendações de medicação. A entrevista DIVA-5 é protegida por direitos autorais e sua reprodução eletrônica exige autorização da DIVA Foundation; por isso, este projeto usa conteúdo próprio e apenas preserva os eixos clínicos necessários para preparar uma avaliação. O próprio DIVA-5 se limita ao TDAH e orienta investigar condições psiquiátricas coexistentes ou diferenciais; depressão e bipolaridade, portanto, permanecem em módulos separados.
+
+Referências clínicas da lógica: validação original do [PHQ-9](https://doi.org/10.1046/j.1525-1497.2001.016009606.x), validação brasileira do [PHQ-9](https://doi.org/10.1111/j.1744-6163.2009.00224.x), desenvolvimento do [MDQ](https://doi.org/10.1176/appi.ajp.157.11.1873) e validação brasileira do [MDQ](https://doi.org/10.1016/j.comppsych.2011.04.059).
 
 Antes de armazenar nomes, contatos ou respostas, implemente consentimento explícito, política de privacidade, finalidade definida, controle de acesso, criptografia, logs e rotina de exclusão em conformidade com a LGPD.

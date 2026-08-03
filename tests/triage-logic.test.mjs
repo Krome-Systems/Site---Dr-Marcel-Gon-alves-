@@ -34,3 +34,28 @@ test("current symptoms alone do not produce a high TDAH summary", () => {
   assert.equal(result.adultThreshold, true);
   assert.equal(result.level, "low");
 });
+
+test("PHQ-9 uses the 0-27 severity bands without turning them into a diagnosis", () => {
+  assert.equal(triage.evaluatePhq9([0, 0, 0, 0, 0, 0, 0, 0, 0]).level, "low");
+  assert.equal(triage.evaluatePhq9([1, 1, 1, 1, 1, 0, 0, 0, 0]).level, "mild");
+  assert.equal(triage.evaluatePhq9([2, 2, 2, 2, 2, 0, 0, 0, 0]).level, "medium");
+  assert.equal(triage.evaluatePhq9([2, 2, 2, 2, 2, 2, 2, 1, 0]).level, "moderately-high");
+  assert.equal(triage.evaluatePhq9([3, 3, 3, 3, 3, 3, 2, 0, 0]).level, "high");
+});
+
+test("PHQ-9 flags any nonzero answer to the safety item for human follow-up", () => {
+  assert.equal(triage.evaluatePhq9([0, 0, 0, 0, 0, 0, 0, 0, 0]).safetyFollowUp, false);
+  assert.equal(triage.evaluatePhq9([0, 0, 0, 0, 0, 0, 0, 0, 1]).safetyFollowUp, true);
+});
+
+test("bipolar screening pattern requires symptoms, concurrence and significant impact", () => {
+  const sevenSymptoms = Object.fromEntries(
+    triage.BIPOLAR_ITEMS.map((_, index) => [String(index), index < 7 ? "yes" : "no"]),
+  );
+  const completePattern = triage.evaluateBipolarScreen(sevenSymptoms, true, 2);
+  assert.equal(completePattern.patternPresent, true);
+  assert.equal(completePattern.level, "high");
+
+  assert.equal(triage.evaluateBipolarScreen(sevenSymptoms, false, 2).patternPresent, false);
+  assert.equal(triage.evaluateBipolarScreen(sevenSymptoms, true, 1).patternPresent, false);
+});

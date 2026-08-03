@@ -3,21 +3,26 @@
 import { useMemo, useState } from "react";
 import {
   ADHD_ITEMS,
+  BIPOLAR_ITEMS,
   GAD7_ITEMS,
   IMPAIRMENT_AREAS,
+  PHQ9_ITEMS,
   evaluateAdhd,
+  evaluateBipolarScreen,
   evaluateGad7,
+  evaluatePhq9,
   type AdhdAnswer,
+  type BipolarAnswer,
 } from "../lib/triage";
 
-type TestSlug = "tdah" | "ansiedade";
+type TestSlug = "tdah" | "ansiedade" | "depressao" | "bipolar";
 type ModalStep = "intro" | "questions" | "context" | "result";
 
 const testCards = [
   { slug: "tdah" as const, title: "TDAH em adultos", description: "Organize sinais atuais, lembranças da infância e impactos na vida cotidiana.", time: "8–12 min", active: true },
   { slug: "ansiedade" as const, title: "Ansiedade", description: "Observe a frequência de sintomas de ansiedade nas últimas duas semanas.", time: "2–3 min", active: true },
-  { slug: "depressao", title: "Depressão", description: "Reflita sobre humor, energia e interesse nas últimas semanas.", time: "3 min", active: false },
-  { slug: "bipolar", title: "Transtorno bipolar", description: "Observe oscilações marcantes de energia, sono e humor.", time: "5 min", active: false },
+  { slug: "depressao" as const, title: "Depressão", description: "Observe humor, energia, sono e interesse nas últimas duas semanas.", time: "3–4 min", active: true },
+  { slug: "bipolar" as const, title: "Sinais de bipolaridade", description: "Revise períodos marcantes de energia, sono, humor e impulsividade.", time: "5–7 min", active: true },
 ];
 
 const frequencyOptions = [
@@ -41,10 +46,13 @@ export default function Home() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [adhdAnswers, setAdhdAnswers] = useState<Record<string, AdhdAnswer>>({});
   const [gadAnswers, setGadAnswers] = useState<number[]>([]);
+  const [phqAnswers, setPhqAnswers] = useState<number[]>([]);
+  const [bipolarAnswers, setBipolarAnswers] = useState<Record<string, BipolarAnswer>>({});
   const [impairments, setImpairments] = useState<string[]>([]);
   const [onsetBefore12, setOnsetBefore12] = useState<"no" | "unsure" | "yes">("unsure");
   const [durationSixMonths, setDurationSixMonths] = useState(false);
-  const [functionalImpact, setFunctionalImpact] = useState(0);
+  const [functionalImpact, setFunctionalImpact] = useState<number | null>(null);
+  const [bipolarConcurrent, setBipolarConcurrent] = useState<"no" | "yes" | null>(null);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "5571993622929";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Olá, gostaria de saber mais sobre uma consulta com o Dr. Marcel.")}`;
@@ -54,8 +62,19 @@ export default function Home() {
     [adhdAnswers, impairments.length, onsetBefore12, durationSixMonths],
   );
   const gadResult = useMemo(() => evaluateGad7(gadAnswers), [gadAnswers]);
+  const phqResult = useMemo(() => evaluatePhq9(phqAnswers), [phqAnswers]);
+  const bipolarResult = useMemo(
+    () => evaluateBipolarScreen(bipolarAnswers, bipolarConcurrent === "yes", functionalImpact ?? 0),
+    [bipolarAnswers, bipolarConcurrent, functionalImpact],
+  );
 
-  const totalQuestions = activeTest === "tdah" ? ADHD_ITEMS.length : GAD7_ITEMS.length;
+  const totalQuestions = activeTest === "tdah"
+    ? ADHD_ITEMS.length
+    : activeTest === "ansiedade"
+      ? GAD7_ITEMS.length
+      : activeTest === "depressao"
+        ? PHQ9_ITEMS.length
+        : BIPOLAR_ITEMS.length;
   const progress = step === "intro" ? 0 : step === "questions" ? ((questionIndex + 1) / (totalQuestions + 1)) * 100 : step === "context" ? 94 : 100;
 
   function openTest(slug: TestSlug) {
@@ -64,10 +83,13 @@ export default function Home() {
     setQuestionIndex(0);
     setAdhdAnswers({});
     setGadAnswers([]);
+    setPhqAnswers([]);
+    setBipolarAnswers({});
     setImpairments([]);
     setOnsetBefore12("unsure");
     setDurationSixMonths(false);
-    setFunctionalImpact(0);
+    setFunctionalImpact(null);
+    setBipolarConcurrent(null);
     document.body.style.overflow = "hidden";
   }
 
@@ -89,6 +111,20 @@ export default function Home() {
     else setQuestionIndex((index) => index + 1);
   }
 
+  function answerPhq(value: number) {
+    const next = [...phqAnswers];
+    next[questionIndex] = value;
+    setPhqAnswers(next);
+    if (questionIndex === PHQ9_ITEMS.length - 1) setStep("context");
+    else setQuestionIndex((index) => index + 1);
+  }
+
+  function answerBipolar(value: BipolarAnswer) {
+    setBipolarAnswers((current) => ({ ...current, [String(questionIndex)]: value }));
+    if (questionIndex === BIPOLAR_ITEMS.length - 1) setStep("context");
+    else setQuestionIndex((index) => index + 1);
+  }
+
   function toggleImpairment(id: string) {
     setImpairments((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
@@ -101,9 +137,47 @@ export default function Home() {
       : adhdResult.level === "medium"
         ? "Alguns eixos importantes apareceram, mas o conjunto não permite concluir a causa desses sinais."
         : "O padrão informado não atingiu os principais eixos desta triagem. Isso não descarta dificuldades ou TDAH."
-    : gadResult.score >= 10
+    : activeTest === "ansiedade" && gadResult.score >= 10
       ? "A intensidade informada sugere que vale conversar com um profissional de saúde."
-      : "O resultado ajuda a acompanhar sintomas, mas não confirma nem exclui um transtorno de ansiedade.";
+      : activeTest === "ansiedade"
+        ? "O resultado ajuda a acompanhar sintomas, mas não confirma nem exclui um transtorno de ansiedade."
+        : activeTest === "depressao" && phqResult.score >= 10
+          ? "A intensidade informada indica que uma avaliação profissional pode ajudar a compreender esses sintomas."
+          : activeTest === "depressao"
+            ? "O resultado organiza sintomas recentes, mas não confirma nem exclui depressão."
+            : bipolarResult.patternPresent
+              ? "As respostas formam um padrão de rastreio que deve ser explorado em avaliação clínica."
+              : "O resultado organiza sinais de períodos de humor e energia, mas não confirma nem exclui transtorno bipolar.";
+
+  const introCopy = {
+    tdah: {
+      kicker: "TDAH em adultos",
+      title: "Uma investigação em quatro eixos.",
+      description: "Você responderá sobre 18 grupos de sinais na vida adulta e na infância, além de duração e impacto. Reserve alguns minutos e, se possível, consulte alguém que conheceu você antes dos 12 anos.",
+    },
+    ansiedade: {
+      kicker: "Ansiedade",
+      title: "Como você esteve nas últimas duas semanas?",
+      description: "O GAD‑7 reúne sete perguntas sobre a frequência de sintomas de ansiedade. O resultado é um rastreio de intensidade, não um diagnóstico.",
+    },
+    depressao: {
+      kicker: "Sintomas depressivos",
+      title: "Como você esteve nas últimas duas semanas?",
+      description: "O PHQ‑9 organiza a frequência de nove sintomas depressivos e seu impacto. A pontuação indica intensidade para orientar uma conversa clínica; não determina diagnóstico.",
+    },
+    bipolar: {
+      kicker: "Sinais de bipolaridade",
+      title: "Você já viveu períodos muito diferentes do seu habitual?",
+      description: "Esta triagem segue a estrutura do MDQ: reúne sinais ao longo da vida e verifica se ocorreram no mesmo período e se trouxeram prejuízo. Ela não diagnostica transtorno bipolar.",
+    },
+  }[activeTest ?? "tdah"];
+  const impactLabel = functionalImpact === 0
+    ? "nenhum"
+    : functionalImpact === 1
+      ? "um pouco"
+      : functionalImpact === 2
+        ? "muito"
+        : "extremo";
 
   return (
     <main>
@@ -146,7 +220,7 @@ export default function Home() {
         <div className="test-grid">
           {testCards.map((test, index) => <article className={test.active ? "test-card active" : "test-card"} key={test.slug}>
             <div className="test-meta"><span>{String(index + 1).padStart(2, "0")}</span><span>{test.time}</span></div><h3>{test.title}</h3><p>{test.description}</p>
-            {test.active ? <button type="button" onClick={() => openTest(test.slug as TestSlug)}>Iniciar triagem <span aria-hidden="true">↗</span></button> : <span className="soon">Em breve</span>}
+            {test.active ? <button type="button" onClick={() => openTest(test.slug)}>Iniciar triagem <span aria-hidden="true">↗</span></button> : <span className="soon">Em breve</span>}
           </article>)}
         </div>
         <p className="legal-line"><span aria-hidden="true">ⓘ</span> Rastreio não é diagnóstico. A avaliação considera entrevista, história, contexto e diagnósticos diferenciais.</p>
@@ -158,8 +232,8 @@ export default function Home() {
       </section>
 
       <section className="legal-section" id="legal">
-        <span className="section-index">04 — Sobre os testes</span><div><h2>Informação responsável também é cuidado.</h2><p>A triagem de TDAH foi estruturada a partir dos eixos investigados em uma avaliação clínica de adultos: sintomas atuais, história infantil, duração e prejuízo. Ela não é a entrevista DIVA‑5 e não reproduz seu conteúdo protegido.</p></div>
-        <ul><li>O DIVA‑5 formal é uma entrevista diagnóstica conduzida por profissional.</li><li>O GAD‑7 mede frequência de sintomas nas últimas duas semanas.</li><li>Nenhum resultado recomenda ou altera medicação.</li><li>Em risco imediato, ligue 192 ou procure uma emergência. Apoio emocional: CVV 188.</li></ul>
+        <span className="section-index">04 — Sobre os testes</span><div><h2>Informação responsável também é cuidado.</h2><p>A triagem de TDAH preserva os eixos clínicos do DIVA‑5: sinais atuais, história infantil, duração e prejuízo. Depressão e bipolaridade são avaliadas em módulos próprios porque o DIVA‑5 não investiga outros transtornos psiquiátricos.</p></div>
+        <ul><li>O DIVA‑5 formal é uma entrevista diagnóstica conduzida por profissional e não é reproduzido aqui.</li><li>GAD‑7 e PHQ‑9 medem a frequência de sintomas nas últimas duas semanas.</li><li>A triagem de bipolaridade segue os eixos de sintomas, simultaneidade e prejuízo do MDQ.</li><li>Nenhum resultado fecha diagnóstico, recomenda ou altera medicação.</li><li>Em risco imediato, ligue 192 ou procure uma emergência. Apoio emocional: CVV 188.</li></ul>
       </section>
 
       <section className="booking-section" id="agendar"><span className="section-index light">05 — Próximo passo</span><h2>Você não precisa entender tudo sozinho.</h2><p>Se algo tem causado sofrimento ou interferido na sua rotina, uma conversa cuidadosa pode ajudar.</p><a className="button ivory" href={whatsappUrl} target="_blank" rel="noreferrer">Agendar pelo WhatsApp <span aria-hidden="true">↗</span></a><small>Atendimento por mensagem · Segunda a sexta, 08:00–18:00</small></section>
@@ -169,17 +243,47 @@ export default function Home() {
       {activeTest && <div className="test-overlay" role="dialog" aria-modal="true" aria-labelledby="test-title">
         <div className="test-shell"><div className="test-topbar"><span className="brand compact"><span className="brand-mark">IM</span><span><strong>Instituto</strong><small>Dr. Marcel</small></span></span><button type="button" onClick={closeTest} aria-label="Fechar triagem">Fechar ×</button></div><div className="progress-track" aria-label={`Progresso: ${Math.round(progress)}%`}><span style={{ width: `${progress}%` }} /></div>
           <div className="test-content">
-            {step === "intro" && <div className="test-intro"><span className="test-kicker">Triagem · {activeTest === "tdah" ? "TDAH em adultos" : "Ansiedade"}</span><h2 id="test-title">{activeTest === "tdah" ? "Uma investigação em quatro eixos." : "Como você esteve nas últimas duas semanas?"}</h2><p>{activeTest === "tdah" ? "Você responderá sobre 18 grupos de sinais na vida adulta e na infância, além de duração e impacto. Reserve alguns minutos e, se possível, consulte alguém que conheceu você antes dos 12 anos." : "O GAD‑7 reúne sete perguntas sobre a frequência de sintomas de ansiedade. O resultado é um rastreio de intensidade, não um diagnóstico."}</p><button className="button primary" type="button" onClick={() => setStep("questions")}>Começar agora →</button><div className="test-disclaimer"><strong>Antes de começar</strong><span>Suas respostas não saem deste dispositivo. Esta triagem não substitui avaliação médica.</span></div></div>}
+            {step === "intro" && <div className="test-intro"><span className="test-kicker">Triagem · {introCopy.kicker}</span><h2 id="test-title">{introCopy.title}</h2><p>{introCopy.description}</p><button className="button primary" type="button" onClick={() => setStep("questions")}>Começar agora →</button><div className="test-disclaimer"><strong>Antes de começar</strong><span>Suas respostas não saem deste dispositivo. Esta triagem não substitui avaliação médica.</span></div></div>}
 
             {step === "questions" && activeTest === "tdah" && currentAdhdItem && <div className="question-panel"><span className="test-kicker">{currentAdhdItem.domain === "attention" ? "Atenção" : "Hiperatividade e impulsividade"} · {questionIndex + 1} de {ADHD_ITEMS.length}</span><h2 id="test-title">{currentAdhdItem.prompt}</h2><p>{currentAdhdItem.example}</p><fieldset><legend>Na vida adulta, considerando os últimos 6 meses:</legend><div className="scale-grid">{frequencyOptions.map((option) => <button className={currentAdhdAnswer?.adult === option.value ? "selected" : ""} type="button" key={option.value} onClick={() => setAdhdAnswers((current) => ({ ...current, [currentAdhdItem.id]: { adult: option.value, childhood: current[currentAdhdItem.id]?.childhood || "unsure" } }))}>{option.label}</button>)}</div></fieldset><fieldset><legend>Entre 5 e 12 anos, havia um padrão parecido?</legend><div className="scale-grid three">{([['no','Não'],['unsure','Não sei'],['yes','Sim']] as const).map(([value,label]) => <button className={currentAdhdAnswer?.childhood === value ? "selected" : ""} type="button" key={value} onClick={() => setAdhdAnswers((current) => ({ ...current, [currentAdhdItem.id]: { adult: current[currentAdhdItem.id]?.adult ?? -1, childhood: value } }))}>{label}</button>)}</div></fieldset><div className="question-nav">{questionIndex > 0 && <button className="back-button" type="button" onClick={() => setQuestionIndex((index) => index - 1)}>← Anterior</button>}<button className="button primary compact-button" type="button" disabled={!currentAdhdAnswer || currentAdhdAnswer.adult < 0} onClick={nextAdhdQuestion}>{questionIndex === ADHD_ITEMS.length - 1 ? "Revisar impacto →" : "Próxima →"}</button></div></div>}
 
             {step === "questions" && activeTest === "ansiedade" && <div className="question-panel"><span className="test-kicker">Pergunta {questionIndex + 1} de {GAD7_ITEMS.length}</span><h2 id="test-title">Com que frequência você foi incomodado por:</h2><p className="question-focus">{GAD7_ITEMS[questionIndex]}?</p><div className="answer-list">{gadOptions.map((option) => <button type="button" key={option.value} onClick={() => answerGad(option.value)}><span>{option.label}</span><small>{option.value} ponto{option.value === 1 ? "" : "s"}</small></button>)}</div>{questionIndex > 0 && <button className="back-button" type="button" onClick={() => setQuestionIndex((index) => index - 1)}>← Pergunta anterior</button>}</div>}
 
+            {step === "questions" && activeTest === "depressao" && <div className="question-panel"><span className="test-kicker">Pergunta {questionIndex + 1} de {PHQ9_ITEMS.length}</span><h2 id="test-title">Nas últimas duas semanas, com que frequência você foi incomodado por:</h2><p className="question-focus">{PHQ9_ITEMS[questionIndex]}?</p><div className="answer-list">{gadOptions.map((option) => <button type="button" key={option.value} className={phqAnswers[questionIndex] === option.value ? "selected" : ""} onClick={() => answerPhq(option.value)}><span>{option.label}</span><small>{option.value} ponto{option.value === 1 ? "" : "s"}</small></button>)}</div>{questionIndex > 0 && <button className="back-button" type="button" onClick={() => setQuestionIndex((index) => index - 1)}>← Pergunta anterior</button>}</div>}
+
+            {step === "questions" && activeTest === "bipolar" && <div className="question-panel"><span className="test-kicker">Experiências ao longo da vida · {questionIndex + 1} de {BIPOLAR_ITEMS.length}</span><h2 id="test-title">Você já teve um período em que:</h2><p className="question-focus">{BIPOLAR_ITEMS[questionIndex]}?</p><p>Considere uma mudança clara em relação ao seu jeito habitual, e não apenas um dia bom ou ruim.</p><div className="scale-grid two">{([['no','Não'],['yes','Sim']] as const).map(([value,label]) => <button className={bipolarAnswers[String(questionIndex)] === value ? "selected" : ""} type="button" key={value} onClick={() => answerBipolar(value)}>{label}</button>)}</div>{questionIndex > 0 && <button className="back-button" type="button" onClick={() => setQuestionIndex((index) => index - 1)}>← Pergunta anterior</button>}</div>}
+
             {step === "context" && activeTest === "tdah" && <div className="context-panel"><span className="test-kicker">Contexto e impacto</span><h2 id="test-title">Esses sinais interferem na sua vida?</h2><p>Marque todas as áreas em que há prejuízo relevante. A avaliação clínica procura evidência em dois ou mais contextos.</p><div className="check-grid">{IMPAIRMENT_AREAS.map((area) => <label key={area.id}><input type="checkbox" checked={impairments.includes(area.id)} onChange={() => toggleImpairment(area.id)} /><span>{area.label}</span></label>)}</div><fieldset><legend>Vários sinais já estavam presentes antes dos 12 anos?</legend><div className="scale-grid three">{([['no','Não'],['unsure','Não sei'],['yes','Sim']] as const).map(([value,label]) => <button className={onsetBefore12 === value ? "selected" : ""} type="button" key={value} onClick={() => setOnsetBefore12(value)}>{label}</button>)}</div></fieldset><label className="confirm-line"><input type="checkbox" checked={durationSixMonths} onChange={(event) => setDurationSixMonths(event.target.checked)} /><span>Os sinais atuais persistem há pelo menos 6 meses, e não apenas em episódios isolados.</span></label><button className="button primary full-button" type="button" onClick={() => setStep("result")}>Ver resumo →</button></div>}
 
-            {step === "context" && activeTest === "ansiedade" && <div className="context-panel"><span className="test-kicker">Impacto funcional</span><h2 id="test-title">Quanto esses sintomas dificultaram sua rotina?</h2><p>Considere trabalho, estudos, tarefas de casa e convivência com outras pessoas.</p><div className="answer-list">{["Não dificultaram", "Dificultaram um pouco", "Dificultaram muito", "Dificultaram extremamente"].map((label, value) => <button type="button" key={label} className={functionalImpact === value ? "selected" : ""} onClick={() => setFunctionalImpact(value)}><span>{label}</span></button>)}</div><button className="button primary full-button" type="button" onClick={() => setStep("result")}>Ver resultado →</button></div>}
+            {step === "context" && (activeTest === "ansiedade" || activeTest === "depressao") && <div className="context-panel"><span className="test-kicker">Impacto funcional</span><h2 id="test-title">Quanto esses sintomas dificultaram sua rotina?</h2><p>Considere trabalho, estudos, tarefas de casa e convivência com outras pessoas.</p>{activeTest === "depressao" && phqResult.safetyFollowUp && <div className="safety-alert" role="alert"><strong>Sua segurança vem primeiro.</strong><span>Você informou pensamentos relacionados a morte ou autoagressão. Se houver risco de agir agora, ligue 192 ou vá a uma emergência. Para apoio emocional, ligue gratuitamente para o CVV no 188. Mesmo sem risco imediato, converse com um profissional o quanto antes.</span></div>}<div className="answer-list">{["Não dificultaram", "Dificultaram um pouco", "Dificultaram muito", "Dificultaram extremamente"].map((label, value) => <button type="button" key={label} className={functionalImpact === value ? "selected" : ""} onClick={() => setFunctionalImpact(value)}><span>{label}</span></button>)}</div><button className="button primary full-button" type="button" disabled={functionalImpact === null} onClick={() => setStep("result")}>Ver resultado →</button></div>}
 
-            {step === "result" && <div className="result-panel"><span className="test-kicker">Resumo da triagem</span>{activeTest === "tdah" ? <><h2 id="test-title">{adhdResult.level === "high" ? "Avaliação profissional recomendada" : adhdResult.level === "medium" ? "Alguns eixos merecem atenção" : "Padrão não evidente nesta triagem"}</h2><p>{resultMessage}</p><div className="result-breakdown"><div><strong>{adhdResult.adultAttention}/9</strong><span>Sinais atuais de atenção</span></div><div><strong>{adhdResult.adultHyperactivity}/9</strong><span>Sinais atuais de hiperatividade/impulsividade</span></div><div><strong>{adhdResult.childhoodAttention + adhdResult.childhoodHyperactivity}</strong><span>Sinais lembrados na infância</span></div><div><strong>{impairments.length}/5</strong><span>Áreas com prejuízo</span></div></div><ul className="criteria-list"><li className={adhdResult.adultThreshold ? "met" : ""}>Limiar de sinais atuais em pelo menos um domínio</li><li className={adhdResult.childhoodPattern ? "met" : ""}>Vários sinais informados antes dos 12 anos</li><li className={adhdResult.crossContextImpairment ? "met" : ""}>Prejuízo informado em dois ou mais contextos</li><li className={adhdResult.durationSixMonths ? "met" : ""}>Persistência atual por pelo menos 6 meses</li></ul></> : <><div className={`score-orbit ${gadResult.level}`}><strong>{gadResult.score}</strong><span>de 21 pontos</span></div><h2 id="test-title">{gadResult.label}</h2><p>{resultMessage} Impacto informado: {functionalImpact === 0 ? "nenhum" : functionalImpact === 1 ? "um pouco" : functionalImpact === 2 ? "muito" : "extremo"}.</p></>}<div className="result-warning"><strong>Este resultado não é um diagnóstico.</strong><span>Sintomas podem ter diferentes causas. Uma avaliação completa inclui história clínica, outras condições, sono, substâncias, medicações e contexto de vida.</span></div><a className="button primary full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Conversar com a equipe →</a><button className="back-button" type="button" onClick={closeTest}>Voltar ao Instituto</button></div>}
+            {step === "context" && activeTest === "bipolar" && <div className="context-panel"><span className="test-kicker">Padrão e impacto</span><h2 id="test-title">Como esses sinais aconteceram?</h2><fieldset><legend>Vários desses sinais ocorreram durante o mesmo período?</legend><div className="scale-grid two">{([['no','Não'],['yes','Sim']] as const).map(([value,label]) => <button className={bipolarConcurrent === value ? "selected" : ""} type="button" key={value} onClick={() => setBipolarConcurrent(value)}>{label}</button>)}</div></fieldset><fieldset><legend>Quanto esse período trouxe problemas, como conflitos, dificuldades no trabalho, gastos ou consequências legais?</legend><div className="answer-list">{["Nenhum problema", "Problema pequeno", "Problema moderado", "Problema grave"].map((label, value) => <button type="button" key={label} className={functionalImpact === value ? "selected" : ""} onClick={() => setFunctionalImpact(value)}><span>{label}</span></button>)}</div></fieldset><button className="button primary full-button" type="button" disabled={bipolarConcurrent === null || functionalImpact === null} onClick={() => setStep("result")}>Ver resumo →</button></div>}
+
+            {step === "result" && <div className="result-panel">
+              <span className="test-kicker">Resumo da triagem</span>
+              {activeTest === "tdah" && <>
+                <h2 id="test-title">{adhdResult.level === "high" ? "Avaliação profissional recomendada" : adhdResult.level === "medium" ? "Alguns eixos merecem atenção" : "Padrão não evidente nesta triagem"}</h2>
+                <p>{resultMessage}</p>
+                <div className="result-breakdown"><div><strong>{adhdResult.adultAttention}/9</strong><span>Sinais atuais de atenção</span></div><div><strong>{adhdResult.adultHyperactivity}/9</strong><span>Sinais atuais de hiperatividade/impulsividade</span></div><div><strong>{adhdResult.childhoodAttention + adhdResult.childhoodHyperactivity}</strong><span>Sinais lembrados na infância</span></div><div><strong>{impairments.length}/5</strong><span>Áreas com prejuízo</span></div></div>
+                <ul className="criteria-list"><li className={adhdResult.adultThreshold ? "met" : ""}>Limiar de sinais atuais em pelo menos um domínio</li><li className={adhdResult.childhoodPattern ? "met" : ""}>Vários sinais informados antes dos 12 anos</li><li className={adhdResult.crossContextImpairment ? "met" : ""}>Prejuízo informado em dois ou mais contextos</li><li className={adhdResult.durationSixMonths ? "met" : ""}>Persistência atual por pelo menos 6 meses</li></ul>
+              </>}
+              {activeTest === "ansiedade" && <>
+                <div className={`score-orbit ${gadResult.level}`}><strong>{gadResult.score}</strong><span>de 21 pontos</span></div>
+                <h2 id="test-title">{gadResult.label}</h2><p>{resultMessage} Impacto informado: {impactLabel}.</p>
+              </>}
+              {activeTest === "depressao" && <>
+                <div className={`score-orbit ${phqResult.level}`}><strong>{phqResult.score}</strong><span>de 27 pontos</span></div>
+                <h2 id="test-title">{phqResult.label}</h2><p>{resultMessage} Impacto informado: {impactLabel}.</p>
+                {phqResult.safetyFollowUp && <div className="safety-alert" role="alert"><strong>Procure apoio agora se você não estiver seguro.</strong><span>Em risco imediato, ligue 192 ou vá a uma emergência. O CVV oferece apoio emocional gratuito pelo 188. Uma resposta acima de zero neste item precisa ser conversada com um profissional, mesmo quando não há intenção de agir.</span></div>}
+              </>}
+              {activeTest === "bipolar" && <>
+                <h2 id="test-title">{bipolarResult.label}</h2><p>{resultMessage}</p>
+                <div className="result-breakdown three-columns"><div><strong>{bipolarResult.symptomCount}/13</strong><span>Sinais informados ao longo da vida</span></div><div><strong>{bipolarResult.concurrent ? "Sim" : "Não"}</strong><span>Vários no mesmo período</span></div><div><strong>{bipolarResult.significantImpact ? "Sim" : "Não"}</strong><span>Problema moderado ou grave</span></div></div>
+                <ul className="criteria-list"><li className={bipolarResult.symptomThreshold ? "met" : ""}>Sete ou mais sinais informados</li><li className={bipolarResult.concurrent ? "met" : ""}>Sinais agrupados no mesmo período</li><li className={bipolarResult.significantImpact ? "met" : ""}>Consequências moderadas ou graves</li></ul>
+              </>}
+              <div className="result-warning"><strong>Este resultado não é um diagnóstico.</strong><span>Sintomas podem ter diferentes causas. Uma avaliação completa inclui história clínica, curso dos episódios, outras condições, sono, substâncias, medicações e contexto de vida.</span></div>
+              <a className="button primary full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Conversar com a equipe →</a><button className="back-button" type="button" onClick={closeTest}>Voltar ao Instituto</button>
+            </div>}
           </div>
         </div>
       </div>}

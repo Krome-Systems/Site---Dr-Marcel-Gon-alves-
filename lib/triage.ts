@@ -43,6 +43,36 @@ export const GAD7_ITEMS = [
   "Sentir medo como se algo ruim pudesse acontecer",
 ] as const;
 
+export const PHQ9_ITEMS = [
+  "Pouco interesse ou pouco prazer em fazer as coisas",
+  "Sentir-se para baixo, deprimido ou sem esperança",
+  "Dificuldade para adormecer, continuar dormindo ou dormir mais do que de costume",
+  "Sentir-se cansado ou com pouca energia",
+  "Falta de apetite ou comer mais do que de costume",
+  "Sentir-se mal consigo mesmo, como se tivesse falhado ou decepcionado pessoas próximas",
+  "Dificuldade para se concentrar, por exemplo ao ler ou assistir televisão",
+  "Mover-se ou falar tão devagar que outras pessoas poderiam notar, ou ficar mais agitado e inquieto do que de costume",
+  "Pensar que seria melhor estar morto ou pensar em se machucar de alguma forma",
+] as const;
+
+export const BIPOLAR_ITEMS = [
+  "Sentiu-se tão animado ou eufórico que outras pessoas acharam diferente do seu jeito habitual",
+  "Ficou tão irritado que discutiu, gritou ou iniciou conflitos",
+  "Sentiu muito mais autoconfiança do que de costume",
+  "Dormiu bem menos que o habitual sem sentir falta de sono",
+  "Falou muito mais ou mais rápido que o habitual",
+  "Teve pensamentos tão acelerados que era difícil acompanhá-los",
+  "Distraiu-se com tanta facilidade que teve dificuldade para manter o foco",
+  "Teve muito mais energia que o habitual",
+  "Ficou muito mais ativo ou envolvido em atividades que o habitual",
+  "Ficou muito mais sociável ou expansivo que o habitual",
+  "Teve muito mais interesse por sexo que o habitual",
+  "Fez coisas incomuns, impulsivas ou que outras pessoas consideraram excessivas ou arriscadas",
+  "Gastou dinheiro de modo que trouxe problemas para você ou sua família",
+] as const;
+
+export type BipolarAnswer = "no" | "yes";
+
 export const IMPAIRMENT_AREAS = [
   { id: "work", label: "Trabalho ou estudos" },
   { id: "relationships", label: "Relacionamentos ou vida familiar" },
@@ -93,4 +123,42 @@ export function evaluateGad7(values: number[]) {
   if (score >= 10) return { score, level: "medium", label: "Sintomas de ansiedade em faixa moderada" } as const;
   if (score >= 5) return { score, level: "mild", label: "Sintomas de ansiedade em faixa leve" } as const;
   return { score, level: "low", label: "Sintomas de ansiedade em faixa mínima" } as const;
+}
+
+export function evaluatePhq9(values: number[]) {
+  const score = values.reduce((total, value) => total + value, 0);
+  const selfHarmAnswer = values[8] ?? 0;
+  const safetyFollowUp = selfHarmAnswer > 0;
+
+  if (score >= 20) return { score, level: "high", label: "Sintomas depressivos em faixa grave", safetyFollowUp } as const;
+  if (score >= 15) return { score, level: "moderately-high", label: "Sintomas depressivos em faixa moderadamente grave", safetyFollowUp } as const;
+  if (score >= 10) return { score, level: "medium", label: "Sintomas depressivos em faixa moderada", safetyFollowUp } as const;
+  if (score >= 5) return { score, level: "mild", label: "Sintomas depressivos em faixa leve", safetyFollowUp } as const;
+  return { score, level: "low", label: "Sintomas depressivos em faixa mínima", safetyFollowUp } as const;
+}
+
+export function evaluateBipolarScreen(
+  answers: Record<string, BipolarAnswer>,
+  concurrent: boolean,
+  impact: number,
+) {
+  const symptomCount = BIPOLAR_ITEMS.filter((_, index) => answers[String(index)] === "yes").length;
+  const symptomThreshold = symptomCount >= 7;
+  const significantImpact = impact >= 2;
+  const patternPresent = symptomThreshold && concurrent && significantImpact;
+  const partialPattern = [symptomThreshold, concurrent, significantImpact].filter(Boolean).length >= 2;
+
+  return {
+    symptomCount,
+    symptomThreshold,
+    concurrent,
+    significantImpact,
+    patternPresent,
+    level: patternPresent ? "high" : partialPattern ? "medium" : "low",
+    label: patternPresent
+      ? "Conjunto de sinais que merece avaliação clínica"
+      : partialPattern
+        ? "Alguns elementos do rastreio apareceram"
+        : "Padrão não evidente nesta triagem",
+  } as const;
 }

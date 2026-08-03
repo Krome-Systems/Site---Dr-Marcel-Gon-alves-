@@ -1,12 +1,11 @@
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export function GET() {
   return Response.json(
     {
       status: "ok",
       service: "instituto-dr-marcel-goncalves",
-      timestamp: new Date().toISOString(),
     },
     { status: 200 },
   );
