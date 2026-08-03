@@ -9,7 +9,7 @@ As triagens disponíveis são:
 - **Sintomas depressivos:** PHQ-9, com nove itens, período de duas semanas, impacto funcional e faixas de intensidade de 0 a 27. Qualquer resposta no item de segurança mostra orientação imediata para apoio humano.
 - **Sinais de bipolaridade:** rastreio estruturado pelos eixos do MDQ: quantidade de sinais ao longo da vida, ocorrência no mesmo período e prejuízo associado. Um padrão de rastreio não equivale a diagnóstico.
 
-Todo o cálculo acontece no navegador. Respostas e resultados não são enviados nem persistidos.
+Todo o cálculo acontece no navegador. As respostas brutas não são persistidas. Ao final, o usuário pode gerar um PDF no próprio dispositivo ou, mediante consentimento, enviar somente o resumo para o e-mail informado.
 
 ## Requisitos
 
@@ -35,6 +35,9 @@ Copie `.env.example` para `.env.local` e configure:
 - `NEXT_PUBLIC_SITE_URL`: endereço público do site.
 - `NEXT_PUBLIC_WHATSAPP_NUMBER`: número do WhatsApp com país e DDD.
 - `DATABASE_URL`: conexão MySQL/MariaDB; só é necessária quando houver persistência.
+- `RESEND_API_KEY`: chave privada do provedor de e-mail Resend.
+- `RESULT_FROM_EMAIL`: remetente verificado, por exemplo `Instituto Dr. Marcel <resultados@seudominio.com.br>`.
+- `RESULT_REPLY_TO`: endereço opcional para respostas ao e-mail.
 
 Na Hostinger, cadastre os valores em **Websites → Node.js → Environment Variables**. Nunca envie `.env.local` ao Git.
 
@@ -66,7 +69,7 @@ Use um plano **Business Web Hosting** ou **Cloud** com suporte a Node.js Web App
    - Build command: `pnpm build`
    - Start command: `pnpm start`
    - Porta: `3000`
-5. Cadastre `NEXT_PUBLIC_SITE_URL` e `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+5. Cadastre `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `RESEND_API_KEY`, `RESULT_FROM_EMAIL` e, opcionalmente, `RESULT_REPLY_TO`.
 6. Se o banco for utilizado, crie um banco MySQL no hPanel e cadastre `DATABASE_URL`.
 7. Faça o deploy e valide `/` e `/api/health`.
 
@@ -80,11 +83,11 @@ O arquivo `netlify.toml` registra somente a versão do Node. Não force `.next` 
 
 Não configure `COREPACK_INTEGRITY_KEYS=0`: desativar essa verificação criptográfica não é necessário para este projeto.
 
-Para uma demonstração por upload manual, execute `pnpm build:static`. O comando cria a pasta `out`, contendo somente HTML, CSS e JavaScript prontos para arrastar no Netlify Drop. Esse modo é exclusivo para demonstração; o build normal da Hostinger continua sendo `pnpm build` e `pnpm start`.
+Para uma demonstração por upload manual, execute `pnpm build:static`. O comando cria a pasta `out`, contendo somente HTML, CSS e JavaScript prontos para arrastar no Netlify Drop. Esse modo é exclusivo para demonstração e não pode enviar e-mails, pois não possui uma função de servidor para proteger a chave privada. Para testar o envio na Netlify, conecte o repositório pelo painel, mantenha o adaptador OpenNext e cadastre as mesmas variáveis privadas do Resend. O build normal da Hostinger continua sendo `pnpm build` e `pnpm start`.
 
 ## Banco de dados
 
-A camada de dados usa Drizzle ORM com MySQL/MariaDB. O schema permanece vazio intencionalmente: dados de triagem são dados sensíveis e só devem ser persistidos depois da definição de consentimento, finalidade, retenção, controle de acesso e demais requisitos da LGPD.
+A camada de dados usa Drizzle ORM com MySQL/MariaDB. O schema permanece vazio intencionalmente: o envio por e-mail não grava respostas no banco. Dados de triagem são dados sensíveis e só devem ser persistidos depois da definição de consentimento, finalidade, retenção, controle de acesso e demais requisitos da LGPD.
 
 Para gerar migrações após adicionar tabelas:
 
@@ -103,6 +106,8 @@ pnpm db:generate
 ## Segurança clínica
 
 Resultados de rastreios nunca devem ser apresentados como diagnóstico. O conteúdo não substitui avaliação médica nem autoriza recomendações de medicação. A entrevista DIVA-5 é protegida por direitos autorais e sua reprodução eletrônica exige autorização da DIVA Foundation; por isso, este projeto usa conteúdo próprio e apenas preserva os eixos clínicos necessários para preparar uma avaliação. O próprio DIVA-5 se limita ao TDAH e orienta investigar condições psiquiátricas coexistentes ou diferenciais; depressão e bipolaridade, portanto, permanecem em módulos separados.
+
+O e-mail é opcional e exige consentimento explícito. A rota valida origem, tamanho e formato do conteúdo, limita tentativas, usa chave apenas no servidor e envia somente o resumo. Mesmo assim, antes da publicação definitiva devem existir política de privacidade, domínio de e-mail verificado, contrato adequado com o provedor e definição de retenção na caixa postal.
 
 Referências clínicas da lógica: validação original do [PHQ-9](https://doi.org/10.1046/j.1525-1497.2001.016009606.x), validação brasileira do [PHQ-9](https://doi.org/10.1111/j.1744-6163.2009.00224.x), desenvolvimento do [MDQ](https://doi.org/10.1176/appi.ajp.157.11.1873) e validação brasileira do [MDQ](https://doi.org/10.1016/j.comppsych.2011.04.059).
 

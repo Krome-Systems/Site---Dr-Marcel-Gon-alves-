@@ -17,6 +17,10 @@ test("contains the institutional content and clinical safeguards", async () => {
   assert.match(page, /estrutura do MDQ/);
   assert.match(page, /Este resultado não é um diagnóstico/);
   assert.match(page, /CVV 188/);
+  assert.match(page, /Baixar resumo em PDF/);
+  assert.match(page, /Enviar resumo/);
+  assert.match(page, /Não é necessário criar conta/);
+  assert.match(page, /site não armazena minhas respostas/);
   assert.match(page, /NEXT_PUBLIC_WHATSAPP_NUMBER/);
   assert.match(layout, /Instituto Dr\. Marcel Gonçalves/);
   assert.match(layout, /NEXT_PUBLIC_SITE_URL/);
@@ -58,4 +62,20 @@ test("provides an isolated static preview build", async () => {
   assert.match(packageJson, /"build:static": "node scripts\/build-static\.mjs"/);
   assert.match(nextConfig, /output: "export"/);
   assert.match(staticBuilder, /STATIC_EXPORT: "1"/);
+});
+
+test("keeps email credentials on the server and validates the delivery route", async () => {
+  const [page, route, envExample] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/send-result/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(page, /RESEND_API_KEY/);
+  assert.match(route, /process\.env\.RESEND_API_KEY/);
+  assert.match(route, /requestOriginIsAllowed/);
+  assert.match(route, /rateLimitAllows/);
+  assert.match(route, /Cache-Control/);
+  assert.match(envExample, /RESEND_API_KEY=/);
+  assert.doesNotMatch(envExample, /NEXT_PUBLIC_RESEND/);
 });

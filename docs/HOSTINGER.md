@@ -25,6 +25,9 @@ Variáveis esperadas:
 - `NEXT_PUBLIC_SITE_URL`: URL HTTPS definitiva.
 - `NEXT_PUBLIC_WHATSAPP_NUMBER`: país, DDD e número, somente dígitos.
 - `DATABASE_URL`: opcional até que a persistência seja ativada.
+- `RESEND_API_KEY`: chave privada de envio, sem prefixo `NEXT_PUBLIC_`.
+- `RESULT_FROM_EMAIL`: remetente de domínio verificado no Resend.
+- `RESULT_REPLY_TO`: endereço opcional para respostas.
 
 ## Verificação após o deploy
 
@@ -32,9 +35,11 @@ Variáveis esperadas:
 2. Abra a página inicial e conclua uma triagem de teste.
    - TDAH: confirme que o resumo separa sinais atuais, infância, duração e áreas de prejuízo.
    - Ansiedade: confirme que a soma varia de 0 a 21 e exibe a faixa correspondente.
-3. Confira o link do WhatsApp em celular e desktop.
-4. Compartilhe a URL em uma mensagem e confira a imagem social.
-5. Verifique os logs da aplicação para erros de inicialização ou conexão.
+3. Baixe o PDF e confirme título, pontuação, resumo, critérios e aviso não diagnóstico.
+4. Envie um resumo para um e-mail de teste e confirme remetente, conteúdo e caixa de spam.
+5. Confira o link do WhatsApp em celular e desktop.
+6. Compartilhe a URL em uma mensagem e confira a imagem social.
+7. Verifique os logs da aplicação sem registrar e-mail ou conteúdo clínico.
 
 ## Rollback
 
@@ -47,4 +52,4 @@ Se a nova versão não iniciar:
 
 Nunca copie dados clínicos ou credenciais para logs, issues ou commits.
 
-As triagens desta versão são processadas integralmente no navegador e não dependem do banco de dados. O endpoint Node.js e a camada MySQL permanecem preparados para uma futura funcionalidade de persistência, que só deve ser ativada após a definição do fluxo de consentimento e proteção de dados.
+As triagens desta versão são processadas integralmente no navegador e não dependem do banco de dados. O PDF também é gerado no dispositivo. Apenas o resumo autorizado passa pela rota de e-mail e pelo provedor Resend. O endpoint Node.js e a camada MySQL permanecem preparados para uma futura funcionalidade de persistência, que só deve ser ativada após a definição do fluxo de consentimento e proteção de dados.

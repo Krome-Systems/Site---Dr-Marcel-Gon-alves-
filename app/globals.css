@@ -199,6 +199,35 @@ footer p { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 0; }
 .safety-alert { margin: 24px 0; padding: 20px; border: 1px solid var(--wine); background: #f5e5df; color: var(--wine-dark); display: grid; gap: 8px; text-align: left; }
 .safety-alert strong { font: 600 18px Georgia, serif; }
 .safety-alert span { font-size: 13px; line-height: 1.6; }
+.result-save-card { margin: 28px 0; padding: clamp(24px, 4vw, 38px); background: var(--paper); border: 1px solid var(--line); text-align: left; position: relative; overflow: hidden; }
+.result-save-card::after { content: ""; position: absolute; width: 150px; height: 150px; border-radius: 50%; background: var(--rose); right: -85px; top: -85px; opacity: .55; }
+.result-save-index { color: var(--clay); text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+.result-save-card h3 { color: var(--wine-dark); font-size: clamp(28px, 3vw, 38px); margin: 12px 0 8px; }
+.result-save-card > p { margin: 0 0 22px; font: 15px/1.55 Georgia, serif; max-width: 560px; }
+.download-button { width: 100%; min-height: 78px; padding: 15px 20px; border: 1px solid var(--wine); background: var(--wine); color: var(--ivory); display: flex; align-items: center; gap: 18px; cursor: pointer; text-align: left; transition: transform .2s, background .2s; }
+.download-button:hover { background: var(--wine-dark); transform: translateY(-2px); }
+.download-button:disabled { opacity: .65; cursor: wait; transform: none; }
+.download-button > span:first-child { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.42); border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.download-button > span:last-child { display: grid; gap: 3px; }
+.download-button strong { font-size: 14px; }
+.download-button small { color: rgba(255,253,248,.7); font-size: 11px; }
+.save-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; margin: 24px 0 18px; }
+.save-divider::before, .save-divider::after { content: ""; height: 1px; background: var(--line); flex: 1; }
+.email-result-form > label:first-child { margin: 0 0 8px; }
+.email-field-row { display: grid; grid-template-columns: 1fr auto; }
+.email-field-row input { border-right: 0; }
+.email-field-row button { min-width: 160px; border: 0; background: var(--clay); color: var(--ivory); padding: 0 20px; cursor: pointer; font-size: 12px; font-weight: 700; }
+.email-field-row button:hover { background: var(--wine); }
+.email-field-row button:disabled { opacity: .6; cursor: not-allowed; }
+.email-consent { display: flex !important; align-items: flex-start; gap: 10px; margin: 16px 0 0 !important; color: var(--muted); font-size: 11px !important; font-weight: 400 !important; line-height: 1.5; cursor: pointer; }
+.email-consent input { width: 17px !important; height: 17px !important; flex: 0 0 auto; margin-top: 1px; accent-color: var(--wine); box-shadow: none !important; }
+.honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
+.delivery-message { min-height: 18px; margin: 10px 0 0 !important; font: 12px/1.4 "Segoe UI", Arial, sans-serif !important; }
+.delivery-message.sent { color: #336446; }
+.delivery-message.error { color: #8a2737; }
+.privacy-note { display: block; color: var(--muted); border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; line-height: 1.5; }
+.static-email-note { margin-top: 18px; padding: 16px; background: #efe2d8; display: grid; gap: 5px; font-size: 12px; line-height: 1.5; }
+.static-email-note span { color: var(--muted); }
 
 @media (max-width: 980px) {
   .menu-button { display: block; z-index: 2; }
@@ -249,6 +278,9 @@ footer p { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 0; }
   .check-grid { grid-template-columns: 1fr; }
   .result-breakdown { grid-template-columns: 1fr 1fr; }
   .result-breakdown.three-columns { grid-template-columns: 1fr; }
+  .email-field-row { grid-template-columns: 1fr; gap: 8px; }
+  .email-field-row input { border-right: 1px solid var(--line); }
+  .email-field-row button { min-height: 52px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

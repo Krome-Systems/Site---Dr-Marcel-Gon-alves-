@@ -17,8 +17,9 @@ async function fileExists(path) {
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 const envExample = await readFile(".env.example", "utf8");
-const [healthRoute, lockfile] = await Promise.all([
+const [healthRoute, resultRoute, lockfile] = await Promise.all([
   fileExists("app/api/health/route.ts"),
+  fileExists("app/api/send-result/route.ts"),
   fileExists("pnpm-lock.yaml"),
 ]);
 
@@ -33,9 +34,12 @@ check("Comando de build", packageJson.scripts?.build === "next build", packageJs
 check("Comando de start", packageJson.scripts?.start === "next start", packageJson.scripts?.start ?? "ausente");
 check("Lockfile do pnpm", lockfile, "pnpm-lock.yaml");
 check("Endpoint de saúde", healthRoute, "app/api/health/route.ts");
+check("Endpoint seguro de e-mail", resultRoute, "app/api/send-result/route.ts");
 check("URL pública documentada", envExample.includes("NEXT_PUBLIC_SITE_URL="), "NEXT_PUBLIC_SITE_URL");
 check("WhatsApp documentado", envExample.includes("NEXT_PUBLIC_WHATSAPP_NUMBER="), "NEXT_PUBLIC_WHATSAPP_NUMBER");
 check("Banco documentado", envExample.includes("DATABASE_URL="), "DATABASE_URL");
+check("Chave de e-mail documentada", envExample.includes("RESEND_API_KEY="), "RESEND_API_KEY");
+check("Remetente documentado", envExample.includes("RESULT_FROM_EMAIL="), "RESULT_FROM_EMAIL");
 
 for (const item of checks) {
   console.log(`${item.ok ? "✓" : "✗"} ${item.label}: ${item.detail}`);

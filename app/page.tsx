@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import {
   ADHD_ITEMS,
   BIPOLAR_ITEMS,
@@ -14,9 +14,12 @@ import {
   type AdhdAnswer,
   type BipolarAnswer,
 } from "../lib/triage";
+import { downloadResultPdf } from "../lib/result-pdf";
+import type { ResultReport } from "../lib/result-report";
 
 type TestSlug = "tdah" | "ansiedade" | "depressao" | "bipolar";
 type ModalStep = "intro" | "questions" | "context" | "result";
+type DeliveryStatus = "idle" | "sending" | "sent" | "error";
 
 const testCards = [
   { slug: "tdah" as const, title: "TDAH em adultos", description: "Organize sinais atuais, lembranças da infância e impactos na vida cotidiana.", time: "8–12 min", active: true },
@@ -53,9 +56,16 @@ export default function Home() {
   const [durationSixMonths, setDurationSixMonths] = useState(false);
   const [functionalImpact, setFunctionalImpact] = useState<number | null>(null);
   const [bipolarConcurrent, setBipolarConcurrent] = useState<"no" | "yes" | null>(null);
+  const [resultEmail, setResultEmail] = useState("");
+  const [emailConsent, setEmailConsent] = useState(false);
+  const [website, setWebsite] = useState("");
+  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>("idle");
+  const [deliveryMessage, setDeliveryMessage] = useState("");
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "5571993622929";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Olá, gostaria de saber mais sobre uma consulta com o Dr. Marcel.")}`;
+  const emailDeliveryAvailable = process.env.NEXT_PUBLIC_STATIC_EXPORT !== "1";
 
   const adhdResult = useMemo(
     () => evaluateAdhd(adhdAnswers, impairments.length, onsetBefore12, durationSixMonths),
@@ -90,6 +100,12 @@ export default function Home() {
     setDurationSixMonths(false);
     setFunctionalImpact(null);
     setBipolarConcurrent(null);
+    setResultEmail("");
+    setEmailConsent(false);
+    setWebsite("");
+    setDeliveryStatus("idle");
+    setDeliveryMessage("");
+    setPdfBusy(false);
     document.body.style.overflow = "hidden";
   }
 
@@ -178,6 +194,104 @@ export default function Home() {
       : functionalImpact === 2
         ? "muito"
         : "extremo";
+
+  function createResultReport(): ResultReport | null {
+    if (!activeTest) return null;
+    const generatedAt = new Date().toISOString();
+
+    if (activeTest === "tdah") {
+      const headline = adhdResult.level === "high"
+        ? "Avaliação profissional recomendada"
+        : adhdResult.level === "medium"
+          ? "Alguns eixos merecem atenção"
+          : "Padrão não evidente nesta triagem";
+      return {
+        test: "TDAH em adultos",
+        generatedAt,
+        headline,
+        summary: resultMessage,
+        details: [
+          `${adhdResult.adultAttention}/9 sinais atuais de atenção`,
+          `${adhdResult.adultHyperactivity}/9 sinais atuais de hiperatividade ou impulsividade`,
+          `${adhdResult.childhoodAttention + adhdResult.childhoodHyperactivity} sinais lembrados na infância`,
+          `${impairments.length}/5 áreas com prejuízo informado`,
+          `Persistência por pelo menos 6 meses: ${adhdResult.durationSixMonths ? "informada" : "não informada"}`,
+        ],
+      };
+    }
+
+    if (activeTest === "ansiedade") return {
+      test: "Ansiedade",
+      generatedAt,
+      headline: gadResult.label,
+      summary: resultMessage,
+      score: `${gadResult.score} de 21 pontos`,
+      details: [`Impacto funcional informado: ${impactLabel}`],
+    };
+
+    if (activeTest === "depressao") return {
+      test: "Sintomas depressivos",
+      generatedAt,
+      headline: phqResult.label,
+      summary: resultMessage,
+      score: `${phqResult.score} de 27 pontos`,
+      details: [`Impacto funcional informado: ${impactLabel}`],
+      ...(phqResult.safetyFollowUp ? {
+        safetyNotice: "Foi informada alguma frequência de pensamentos relacionados a morte ou autoagressão. Em risco imediato, ligue 192 ou procure uma emergência. Para apoio emocional, ligue 188. Mesmo sem risco imediato, converse com um profissional o quanto antes.",
+      } : {}),
+    };
+
+    return {
+      test: "Sinais de bipolaridade",
+      generatedAt,
+      headline: bipolarResult.label,
+      summary: resultMessage,
+      details: [
+        `${bipolarResult.symptomCount}/13 sinais informados ao longo da vida`,
+        `Vários sinais no mesmo período: ${bipolarResult.concurrent ? "sim" : "não"}`,
+        `Problema moderado ou grave: ${bipolarResult.significantImpact ? "sim" : "não"}`,
+      ],
+    };
+  }
+
+  async function handlePdfDownload() {
+    const report = createResultReport();
+    if (!report || pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      await downloadResultPdf(report);
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
+  async function handleEmailDelivery(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const report = createResultReport();
+    if (!report || deliveryStatus === "sending") return;
+    if (!emailConsent) {
+      setDeliveryStatus("error");
+      setDeliveryMessage("Confirme o consentimento para enviar o resumo.");
+      return;
+    }
+
+    setDeliveryStatus("sending");
+    setDeliveryMessage("");
+    try {
+      const response = await fetch("/api/send-result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resultEmail, consent: true, website, report }),
+      });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(body.error || "Não foi possível enviar o resumo.");
+      setDeliveryStatus("sent");
+      setDeliveryMessage("Resumo enviado. Confira também a caixa de spam.");
+    } catch (error) {
+      setDeliveryStatus("error");
+      setDeliveryMessage(error instanceof Error ? error.message : "Não foi possível enviar o resumo.");
+    }
+  }
 
   return (
     <main>
@@ -282,6 +396,21 @@ export default function Home() {
                 <ul className="criteria-list"><li className={bipolarResult.symptomThreshold ? "met" : ""}>Sete ou mais sinais informados</li><li className={bipolarResult.concurrent ? "met" : ""}>Sinais agrupados no mesmo período</li><li className={bipolarResult.significantImpact ? "met" : ""}>Consequências moderadas ou graves</li></ul>
               </>}
               <div className="result-warning"><strong>Este resultado não é um diagnóstico.</strong><span>Sintomas podem ter diferentes causas. Uma avaliação completa inclui história clínica, curso dos episódios, outras condições, sono, substâncias, medicações e contexto de vida.</span></div>
+              <section className="result-save-card" aria-labelledby="save-result-title">
+                <span className="result-save-index">Seu resumo</span>
+                <h3 id="save-result-title">Guarde para levar à consulta.</h3>
+                <p>Baixe o PDF agora ou receba uma cópia no seu e-mail. Não é necessário criar conta.</p>
+                <button className="download-button" type="button" onClick={handlePdfDownload} disabled={pdfBusy}>
+                  <span aria-hidden="true">↓</span><span><strong>{pdfBusy ? "Preparando PDF..." : "Baixar resumo em PDF"}</strong><small>Gerado neste dispositivo</small></span>
+                </button>
+                {emailDeliveryAvailable ? <><div className="save-divider"><span>ou envie por e-mail</span></div><form className="email-result-form" onSubmit={handleEmailDelivery}>
+                  <label htmlFor="result-email">Seu e-mail</label>
+                  <div className="email-field-row"><input id="result-email" type="email" inputMode="email" autoComplete="email" placeholder="voce@exemplo.com" required maxLength={254} value={resultEmail} onChange={(event) => { setResultEmail(event.target.value); setDeliveryStatus("idle"); setDeliveryMessage(""); }} /><button type="submit" disabled={deliveryStatus === "sending" || deliveryStatus === "sent"}>{deliveryStatus === "sending" ? "Enviando..." : deliveryStatus === "sent" ? "Enviado ✓" : "Enviar resumo →"}</button></div>
+                  <div className="honeypot" aria-hidden="true"><label htmlFor="website">Não preencha</label><input id="website" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></div>
+                  <label className="email-consent"><input type="checkbox" checked={emailConsent} onChange={(event) => setEmailConsent(event.target.checked)} /><span>Concordo com o envio deste resumo ao e-mail informado. O site não armazena minhas respostas; o provedor de e-mail processa os dados somente para realizar a entrega.</span></label>
+                  <p className={`delivery-message ${deliveryStatus}`} aria-live="polite">{deliveryMessage}</p>
+                </form><small className="privacy-note">O e-mail é enviado somente para você. Durante a consulta, apresente o PDF ou a mensagem recebida.</small></> : <div className="static-email-note"><strong>Envio por e-mail disponível na versão completa.</strong><span>Nesta demonstração estática, baixe o PDF para guardar seu resumo com segurança.</span></div>}
+              </section>
               <a className="button primary full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Conversar com a equipe →</a><button className="back-button" type="button" onClick={closeTest}>Voltar ao Instituto</button>
             </div>}
           </div>
