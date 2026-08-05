@@ -43,10 +43,24 @@ const gadOptions = [
 ];
 
 const traceBars = [0.22, 0.82, 0.35, 0.95, 0.48, 0.72, 0.3, 0.88, 0.56, 1, 0.4, 0.68];
+const depressaoBars = [1, 0.97, 0.93, 0.88, 0.84, 0.79, 0.75, 0.7, 0.66, 0.61, 0.57, 0.52];
+const bipolarBars = [0.66, 0.78, 0.9, 1, 0.9, 0.78, 0.66, 0.78, 0.9, 1, 0.9, 0.78];
+
+function traceShape(variant: TestSlug) {
+  if (variant === "depressao") return depressaoBars;
+  if (variant === "bipolar") return bipolarBars;
+  return traceBars;
+}
+
+function traceDelay(variant: TestSlug, index: number) {
+  if (variant === "depressao") return `${index * -0.28}s`;
+  if (variant === "bipolar") return index < 6 ? `${index * -0.04}s` : `${-1 - (index - 6) * 0.04}s`;
+  return `${index * -0.09}s`;
+}
 
 function SignalTrace({ variant }: { variant: TestSlug }) {
   return <div className={`signal-trace ${variant}`} aria-hidden="true">
-    {traceBars.map((height, index) => <span key={`${variant}-${index}`} style={{ "--bar-height": height, "--bar-delay": `${index * -0.09}s` } as CSSProperties} />)}
+    {traceShape(variant).map((height, index) => <span key={`${variant}-${index}`} style={{ "--bar-height": height, "--bar-delay": traceDelay(variant, index) } as CSSProperties} />)}
   </div>;
 }
 
@@ -646,7 +660,7 @@ export default function Home() {
 
       <section className="intro-section" id="instituto">
         <div className="section-shell">
-          <div className="section-label"><span>O INSTITUTO</span><i /></div>
+          <div className="section-label"><span>O INSTITUTO</span></div>
           <h2>Clareza começa quando você se sente <em>verdadeiramente ouvido.</em></h2>
           <p className="section-lead">O Instituto aproxima informação responsável, autoconhecimento e cuidado psiquiátrico — diagnóstico cuidadoso, prescrição responsável e acompanhamento contínuo.</p>
           <ScrollSteps className="principles" steps={[["01","Escuta antes do rótulo","A história completa vem primeiro. O nome do quadro vem depois — e só quando se sustenta."],["02","Prescrição responsável","Cada conduta é explicada, revisada e ajustada junto com você — nunca no automático."],["03","Acompanhamento real","Tratamento é processo. O retorno faz parte do cuidado, não é exceção."]]} />
@@ -655,7 +669,7 @@ export default function Home() {
 
       <section className="tests-section" id="triagens">
         <div className="section-shell">
-          <div className="section-label centered"><span>TRIAGENS</span><i /></div>
+          <div className="section-label centered"><span>TRIAGENS</span></div>
           <h2>Cada quadro tem o seu próprio traço.</h2>
           <p className="section-lead centered">As respostas ficam apenas neste navegador e não são enviadas ao Instituto. Use o resumo para organizar uma conversa clínica.</p>
           <div className="test-grid">
@@ -672,14 +686,14 @@ export default function Home() {
 
       <section className="about-section" id="sobre">
         <div className="section-shell about-grid">
-          <div className="doctor-portrait" aria-label="Espaço reservado para retrato institucional"><div><span>retrato</span><strong>Dr. Marcel Gonçalves</strong><small>1200 × 1500</small></div></div>
+          <div className="doctor-portrait"><img src="/dr-marcel.png" alt="Dr. Marcel Gonçalves" width={1122} height={1402} loading="lazy" decoding="async" /></div>
           <div className="about-copy"><span className="about-kicker">CONHECIMENTO TÉCNICO. PRESENÇA HUMANA.</span><h2>Dr. Marcel<br />Gonçalves</h2><p className="doctor-role">Médico psiquiatra <i /> <span>CRM-BA 47156</span></p><p>Médico pós-graduado em Psiquiatria pelo Hospital Israelita Albert Einstein, com base sólida em Clínica Médica, experiência no manejo de casos complexos e atendimento centrado no paciente.</p><blockquote>“Visão médica integral, com escuta e acompanhamento real.”</blockquote><div className="credentials"><div><span>REGISTRO</span><strong>CRM-BA 47156</strong><small>Bahia · Brasil</small></div><div><span>FORMAÇÃO</span><strong>Pós-graduação em Psiquiatria</strong><small>Hospital Israelita Albert Einstein</small></div></div><a className="button primary" href="#agendar">Conversar sobre uma consulta</a></div>
         </div>
       </section>
 
       <section className="legal-section" id="legal">
         <div className="section-shell">
-          <div className="section-label centered muted-label"><span>SOBRE OS TESTES</span><i /></div>
+          <div className="section-label centered muted-label"><span>SOBRE OS TESTES</span></div>
           <h2>Informação responsável também é cuidado.</h2>
           <p className="section-lead centered">O que cada instrumento é — e o que ele não é.</p>
           <ScrollSteps className="method-list" accent="#6E7FA8" steps={[["01","Triagem de TDAH","Estruturada a partir dos eixos de uma avaliação clínica de adultos — não é a entrevista DIVA‑5 nem reproduz seu conteúdo protegido."],["02","DIVA‑5 formal","É uma entrevista diagnóstica conduzida por profissional habilitado, em consulta."],["03","GAD‑7, PHQ‑9 e rastreio de bipolaridade","Organizam frequência, intensidade, simultaneidade e prejuízo para apoiar uma conversa clínica."],["04","Sem conduta automática","Nenhum resultado fecha diagnóstico, recomenda, inicia ou altera medicação."]]} />
