@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import {
   ADHD_ITEMS,
   BIPOLAR_ITEMS,
@@ -42,6 +42,328 @@ const gadOptions = [
   { value: 3, label: "Quase todos os dias" },
 ];
 
+const traceBars = [0.22, 0.82, 0.35, 0.95, 0.48, 0.72, 0.3, 0.88, 0.56, 1, 0.4, 0.68];
+
+function SignalTrace({ variant }: { variant: TestSlug }) {
+  return <div className={`signal-trace ${variant}`} aria-hidden="true">
+    {traceBars.map((height, index) => <span key={`${variant}-${index}`} style={{ "--bar-height": height, "--bar-delay": `${index * -0.09}s` } as CSSProperties} />)}
+  </div>;
+}
+
+function ParticleBrain() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    type Particle = { x: number; y: number; tx: number; ty: number; vx: number; vy: number; phase: number; speed: number; size: number; blue: boolean };
+    let particles: Particle[] = [];
+    let frame = 0;
+    let width = 0;
+    let height = 0;
+    let startedAt = performance.now();
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const pointer = { x: -9999, y: -9999 };
+    const noiseWords = wrap.querySelector<HTMLElement>(".noise-words");
+    const hint = wrap.querySelector<HTMLElement>("small");
+
+    const build = () => {
+      const rect = wrap.getBoundingClientRect();
+      width = Math.max(320, rect.width);
+      height = Math.max(320, rect.height);
+      const ratio = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      const mask = document.createElement("canvas");
+      mask.width = Math.max(1, Math.round(width));
+      mask.height = Math.max(1, Math.round(height));
+      const maskContext = mask.getContext("2d");
+      if (!maskContext) return;
+      maskContext.fillStyle = "#fff";
+      maskContext.strokeStyle = "#fff";
+      maskContext.lineJoin = "round";
+      maskContext.lineCap = "round";
+
+      const scale = Math.min(width, height) * 0.88;
+      const point = (x: number, y: number): [number, number] => [
+        width / 2 + (x - 0.5) * scale * 1.15,
+        height / 2 + (y - 0.53) * scale * 0.95,
+      ];
+      const radii: Array<[number, number]> = [[0, 0.42], [0.5, 0.365], [1, 0.295], [1.57, 0.225], [2.1, 0.25], [2.6, 0.345], [Math.PI, 0.41], [3.7, 0.435], [4.2, 0.42], [4.71, 0.37], [5.2, 0.41], [5.75, 0.435], [Math.PI * 2, 0.42]];
+      const baseRadius = (angle: number) => {
+        const normalized = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        for (let index = 0; index < radii.length - 1; index += 1) {
+          const current = radii[index];
+          const next = radii[index + 1];
+          if (normalized >= current[0] && normalized <= next[0]) {
+            const progress = (normalized - current[0]) / (next[0] - current[0]);
+            const smooth = progress * progress * (3 - 2 * progress);
+            return current[1] * (1 - smooth) + next[1] * smooth;
+          }
+        }
+        return 0.42;
+      };
+      const outlinePoint = (angle: number, radiusFactor = 1): [number, number] => {
+        const folds = 1 + 0.05 * Math.sin(7 * angle + 0.6) + 0.027 * Math.sin(12 * angle + 2.4) + 0.013 * Math.sin(19 * angle + 1.1);
+        const radius = baseRadius(angle) * folds * radiusFactor;
+        return point(0.5 + Math.cos(angle) * radius, 0.45 + Math.sin(angle) * radius);
+      };
+
+      maskContext.beginPath();
+      for (let index = 0; index <= 360; index += 1) {
+        const position = outlinePoint(index / 360 * Math.PI * 2);
+        if (index === 0) maskContext.moveTo(position[0], position[1]);
+        else maskContext.lineTo(position[0], position[1]);
+      }
+      maskContext.closePath();
+      maskContext.fill();
+
+      const blob = (centerX: number, centerY: number, radiusX: number, radiusY: number, rotation: number, frequency: number, amplitude: number) => {
+        maskContext.beginPath();
+        for (let index = 0; index <= 220; index += 1) {
+          const angle = index / 220 * Math.PI * 2;
+          const variation = 1 + amplitude * Math.sin(frequency * angle + 1.3);
+          const x = Math.cos(angle) * radiusX * variation;
+          const y = Math.sin(angle) * radiusY * variation;
+          const position = point(centerX + x * Math.cos(rotation) - y * Math.sin(rotation), centerY + x * Math.sin(rotation) + y * Math.cos(rotation));
+          if (index === 0) maskContext.moveTo(position[0], position[1]);
+          else maskContext.lineTo(position[0], position[1]);
+        }
+        maskContext.closePath();
+        maskContext.fill();
+      };
+
+      blob(0.325, 0.625, 0.17, 0.098, -0.14, 9, 0.08);
+      const cerebellumX = 0.745;
+      const cerebellumY = 0.7;
+      const cerebellumRadius = 0.13;
+      blob(cerebellumX, cerebellumY, cerebellumRadius, cerebellumRadius * 0.76, 0.12, 12, 0.09);
+
+      maskContext.lineWidth = scale * 0.062;
+      const stemStart = point(0.595, 0.625);
+      const stemCurve = point(0.605, 0.72);
+      const stemEnd = point(0.645, 0.815);
+      maskContext.beginPath();
+      maskContext.moveTo(stemStart[0], stemStart[1]);
+      maskContext.quadraticCurveTo(stemCurve[0], stemCurve[1], stemEnd[0], stemEnd[1]);
+      maskContext.stroke();
+
+      maskContext.globalCompositeOperation = "destination-out";
+      maskContext.lineWidth = Math.max(2.6, scale * 0.028);
+      const fissureStart = point(0.205, 0.545);
+      const fissureCurve1 = point(0.36, 0.55);
+      const fissureCurve2 = point(0.5, 0.515);
+      const fissureEnd = point(0.585, 0.435);
+      maskContext.beginPath();
+      maskContext.moveTo(fissureStart[0], fissureStart[1]);
+      maskContext.bezierCurveTo(fissureCurve1[0], fissureCurve1[1], fissureCurve2[0], fissureCurve2[1], fissureEnd[0], fissureEnd[1]);
+      maskContext.stroke();
+
+      const groove = (radiusFactor: number, start: number, end: number, amplitude: number, frequency: number) => {
+        maskContext.beginPath();
+        for (let index = 0; index <= 100; index += 1) {
+          const angle = start + (end - start) * index / 100;
+          const position = outlinePoint(angle, radiusFactor * (1 + amplitude * Math.sin(frequency * angle + 0.4)));
+          if (index === 0) maskContext.moveTo(position[0], position[1]);
+          else maskContext.lineTo(position[0], position[1]);
+        }
+        maskContext.stroke();
+      };
+      groove(0.76, -2.85, -0.35, 0.05, 5);
+      groove(0.5, -2.62, -0.5, 0.07, 4);
+      groove(0.86, -4.1, -3.4, 0.04, 6);
+
+      const cerebellumArc = (radius: number, verticalScale: number, start: number, end: number, lineWidth: number) => {
+        maskContext.lineWidth = lineWidth;
+        maskContext.beginPath();
+        for (let index = 0; index <= 80; index += 1) {
+          const angle = start + (end - start) * index / 80;
+          const position = point(cerebellumX + Math.cos(angle) * radius, cerebellumY + Math.sin(angle) * radius * verticalScale);
+          if (index === 0) maskContext.moveTo(position[0], position[1]);
+          else maskContext.lineTo(position[0], position[1]);
+        }
+        maskContext.stroke();
+      };
+      cerebellumArc(cerebellumRadius * 1.28, 0.82, Math.PI * 1.06, Math.PI * 1.92, Math.max(3, scale * 0.03));
+      cerebellumArc(cerebellumRadius * 0.62, 0.8, Math.PI * 1.15, Math.PI * 1.85, Math.max(2.2, scale * 0.018));
+
+      maskContext.lineWidth = Math.max(2.6, scale * 0.026);
+      const lowerGrooveStart = point(0.225, 0.53);
+      const lowerGrooveCurve = point(0.265, 0.6);
+      const lowerGrooveEnd = point(0.225, 0.66);
+      maskContext.beginPath();
+      maskContext.moveTo(lowerGrooveStart[0], lowerGrooveStart[1]);
+      maskContext.quadraticCurveTo(lowerGrooveCurve[0], lowerGrooveCurve[1], lowerGrooveEnd[0], lowerGrooveEnd[1]);
+      maskContext.stroke();
+      maskContext.globalCompositeOperation = "source-over";
+
+      const pixels = maskContext.getImageData(0, 0, mask.width, mask.height).data;
+      let spacing = Math.max(3, Math.round(width / 300));
+      let points: Array<[number, number]> = [];
+      for (let attempt = 0; attempt < 14; attempt += 1) {
+        points = [];
+        for (let y = 0; y < mask.height; y += spacing) {
+          for (let x = 0; x < mask.width; x += spacing) {
+            if (pixels[(y * mask.width + x) * 4 + 3] > 130) {
+              points.push([x + (Math.random() - 0.5) * spacing * 0.7, y + (Math.random() - 0.5) * spacing * 0.7]);
+            }
+          }
+        }
+        if (points.length <= 2600) break;
+        spacing += 1;
+      }
+
+      const previous = particles;
+      particles = points.map(([tx, ty], index) => ({
+        x: reducedMotion ? tx : previous[index]?.x ?? Math.random() * width,
+        y: reducedMotion ? ty : previous[index]?.y ?? Math.random() * height,
+        tx,
+        ty,
+        vx: 0,
+        vy: 0,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.55 + Math.random() * 0.95,
+        size: Math.random() < 0.12 ? 2.2 : 1.4,
+        blue: Math.random() < 0.22,
+      }));
+    };
+
+    const draw = (now: number) => {
+      context.clearRect(0, 0, width, height);
+      const elapsed = (now - startedAt) / 1000;
+      const settle = reducedMotion ? 1 : Math.min(1, Math.max(0, (elapsed - 1.45) / 2.9));
+      const ease = settle * settle * (3 - 2 * settle);
+      const stiffness = 0.01 + ease * 0.072;
+      const damping = 0.905 - ease * 0.075;
+      const chaos = 2.4 * (1 - ease) + 0.18;
+
+      for (const particle of particles) {
+        const dx = particle.x - pointer.x;
+        const dy = particle.y - pointer.y;
+        const distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared < 13000) {
+          const distance = Math.sqrt(distanceSquared) || 1;
+          const force = (1 - distanceSquared / 13000) * 2.2;
+          particle.vx += (dx / distance) * force;
+          particle.vy += (dy / distance) * force;
+        }
+        particle.vx += (particle.tx - particle.x) * stiffness * particle.speed;
+        particle.vy += (particle.ty - particle.y) * stiffness * particle.speed;
+        particle.vx *= damping;
+        particle.vy *= damping;
+        if (!reducedMotion) {
+          particle.x += particle.vx + Math.cos(elapsed * 1.5 + particle.phase) * chaos * 0.55;
+          particle.y += particle.vy + Math.sin(elapsed * 1.25 + particle.phase * 1.7) * chaos * 0.55;
+        }
+        context.globalAlpha = particle.blue ? (0.26 + ease * 0.68) * 0.95 : 0.26 + ease * 0.68;
+        context.fillStyle = particle.blue ? "#4C90FF" : "#F2F6FF";
+        context.fillRect(particle.x, particle.y, particle.size, particle.size);
+      }
+      context.globalAlpha = 1;
+      if (noiseWords) noiseWords.style.opacity = String(0.9 - ease * 0.84);
+      if (hint) hint.style.opacity = String(0.06 + ease * 0.3);
+      if (!reducedMotion) frame = requestAnimationFrame(draw);
+    };
+
+    const scatter = () => {
+      startedAt = performance.now();
+      for (const particle of particles) {
+        particle.x = Math.random() * width;
+        particle.y = Math.random() * height;
+        particle.vx = (Math.random() - 0.5) * 5;
+        particle.vy = (Math.random() - 0.5) * 5;
+      }
+      if (noiseWords) noiseWords.style.opacity = "0.9";
+    };
+    const move = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = event.clientX - rect.left;
+      pointer.y = event.clientY - rect.top;
+    };
+    const leave = () => { pointer.x = -9999; pointer.y = -9999; };
+
+    build();
+    if (reducedMotion) draw(performance.now());
+    else frame = requestAnimationFrame(draw);
+    const observer = new ResizeObserver(build);
+    observer.observe(wrap);
+    wrap.addEventListener("pointermove", move);
+    wrap.addEventListener("pointerleave", leave);
+    wrap.addEventListener("click", scatter);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      wrap.removeEventListener("pointermove", move);
+      wrap.removeEventListener("pointerleave", leave);
+      wrap.removeEventListener("click", scatter);
+    };
+  }, []);
+
+  return <div className="brain-visual" ref={wrapRef}>
+    <div className="noise-words" aria-hidden="true"><span>esqueci de novo</span><span>amanhã eu faço</span><span>não consigo parar</span><span>03:40 da manhã</span><span>muitas abas</span><span>onde deixei?</span></div>
+    <canvas ref={canvasRef} aria-label="Ilustração interativa de sinais se organizando em um cérebro" />
+    <small>clique para dispersar</small>
+  </div>;
+}
+
+type ScrollStep = readonly [string, string, string];
+
+function ScrollSteps({ steps, className, accent = "#0A66E8" }: { steps: readonly ScrollStep[]; className: string; accent?: string }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const rows = Array.from(wrap.querySelectorAll<HTMLElement>("article"));
+    let animationFrame = 0;
+
+    const update = () => {
+      animationFrame = 0;
+      const focus = window.innerHeight * 0.62;
+      const bounds = wrap.getBoundingClientRect();
+      const progress = Math.max(0, Math.min(1, (focus - bounds.top) / Math.max(1, bounds.height * 0.88)));
+      wrap.style.setProperty("--steps-progress", `${(progress * 100).toFixed(1)}%`);
+      rows.forEach((row) => {
+        const rowBounds = row.getBoundingClientRect();
+        row.classList.toggle("active", rowBounds.top + rowBounds.height * 0.34 < focus);
+      });
+    };
+    const requestUpdate = () => {
+      if (!animationFrame) animationFrame = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    update();
+    const delayedUpdate = window.setTimeout(requestUpdate, 400);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      clearTimeout(delayedUpdate);
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+    };
+  }, []);
+
+  return <div ref={wrapRef} className={`scroll-steps ${className}`} style={{ "--steps-accent": accent } as CSSProperties}>
+    <span className="steps-rail" aria-hidden="true"><i /></span>
+    {steps.map(([number, title, copy]) => <article key={number}>
+      <i className="step-dot" aria-hidden="true" />
+      <span className="step-number">{number}</span>
+      <div><h3>{title}</h3><p>{copy}</p><i className="step-line" aria-hidden="true" /></div>
+    </article>)}
+  </div>;
+}
+
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTest, setActiveTest] = useState<TestSlug | null>(null);
@@ -62,6 +384,13 @@ export default function Home() {
   const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>("idle");
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
+
+  useEffect(() => {
+    if (!activeTest) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [activeTest]);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "5571993622929";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Olá, gostaria de saber mais sobre uma consulta com o Dr. Marcel.")}`;
@@ -106,12 +435,10 @@ export default function Home() {
     setDeliveryStatus("idle");
     setDeliveryMessage("");
     setPdfBusy(false);
-    document.body.style.overflow = "hidden";
   }
 
   function closeTest() {
     setActiveTest(null);
-    document.body.style.overflow = "";
   }
 
   function nextAdhdQuestion() {
@@ -296,63 +623,73 @@ export default function Home() {
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="#inicio" aria-label="Instituto Dr. Marcel Gonçalves — início">
-          <span className="brand-mark">IM</span><span><strong>Instituto</strong><small>Dr. Marcel Gonçalves</small></span>
-        </a>
+        <a className="brand" href="#inicio" aria-label="Instituto Dr. Marcel Gonçalves — início"><strong>Instituto</strong><span>Dr. Marcel Gonçalves</span></a>
         <button className="menu-button" type="button" aria-expanded={menuOpen} aria-label="Abrir menu" onClick={() => setMenuOpen(!menuOpen)}><span /><span /></button>
-        <nav className={menuOpen ? "nav open" : "nav"} aria-label="Navegação principal">
+        <nav className={menuOpen ? "nav open" : "nav"} aria-label="Navegação principal" onClick={() => setMenuOpen(false)}>
           <a href="#instituto">O Instituto</a><a href="#triagens">Triagens</a><a href="#sobre">Dr. Marcel</a><a href="#legal">Sobre os testes</a>
-          <a className="nav-cta" href="#agendar">Agendar consulta</a>
+          <a className="nav-cta" href="#agendar">Agendar</a>
         </nav>
       </header>
 
       <section className="hero" id="inicio">
-        <div className="hero-copy">
-          <span className="eyebrow">Psiquiatria online com profundidade clínica e cuidado real</span>
-          <h1>Diagnóstico cuidadoso,<br /><em>sem rótulos apressados.</em></h1>
-          <p>Escuta qualificada, raciocínio clínico e tratamento individualizado para adultos em qualquer lugar do Brasil.</p>
-          <div className="hero-actions"><button className="button primary" type="button" onClick={() => openTest("tdah")}>Começar uma triagem <span aria-hidden="true">→</span></button><a className="text-link" href="#sobre">Conheça o Dr. Marcel</a></div>
-          <div className="hero-note"><span aria-hidden="true">✦</span> Privado no seu dispositivo · Sem diagnóstico automático</div>
+        <div className="hero-inner">
+          <ParticleBrain />
+          <div className="hero-copy">
+            <span className="eyebrow"><i /> Psiquiatria online · Adultos · Todo o Brasil</span>
+            <h1>Diagnóstico cuidadoso, sem rótulos apressados.</h1>
+            <p>Escuta qualificada, raciocínio clínico e tratamento individualizado. O ruído vira leitura clínica — e a leitura clínica vira um plano.</p>
+            <div className="hero-actions"><a className="button primary" href="#triagens">Começar uma triagem</a><a className="button secondary" href="#sobre">Conheça o Dr. Marcel</a></div>
+            <small className="hero-note">Privado no seu dispositivo · Sem diagnóstico automático</small>
+          </div>
         </div>
-        <div className="hero-art" aria-hidden="true"><div className="shape shape-one" /><div className="shape shape-two" /><div className="hero-card"><span className="hero-card-number">01</span><p>Escuta qualificada</p><span>Entender antes de nomear.</span></div><div className="hero-quote">“Cada história pede<br />um olhar inteiro.”</div></div>
-      </section>
-
-      <section className="trust-bar" aria-label="Credenciais">
-        <div><strong>CRM-BA 47156</strong><span>Registro profissional</span></div>
-        <div><strong>Hospital Israelita Albert Einstein</strong><span>Pós-graduação em Psiquiatria</span></div>
-        <div><strong>Atendimento 100% online</strong><span>Em qualquer lugar do Brasil</span></div>
       </section>
 
       <section className="intro-section" id="instituto">
-        <span className="section-index">01 — O Instituto</span>
-        <div><h2>Clareza começa quando você se sente verdadeiramente ouvido.</h2><p>O Instituto aproxima informação responsável, autoconhecimento e cuidado psiquiátrico. O atendimento combina diagnóstico cuidadoso, prescrição responsável e acompanhamento contínuo.</p></div>
-        <aside><span>Nosso princípio</span><strong>Investigar com rigor.<br />Acolher com presença.</strong></aside>
+        <div className="section-shell">
+          <div className="section-label"><span>O INSTITUTO</span><i /></div>
+          <h2>Clareza começa quando você se sente <em>verdadeiramente ouvido.</em></h2>
+          <p className="section-lead">O Instituto aproxima informação responsável, autoconhecimento e cuidado psiquiátrico — diagnóstico cuidadoso, prescrição responsável e acompanhamento contínuo.</p>
+          <ScrollSteps className="principles" steps={[["01","Escuta antes do rótulo","A história completa vem primeiro. O nome do quadro vem depois — e só quando se sustenta."],["02","Prescrição responsável","Cada conduta é explicada, revisada e ajustada junto com você — nunca no automático."],["03","Acompanhamento real","Tratamento é processo. O retorno faz parte do cuidado, não é exceção."]]} />
+        </div>
       </section>
 
       <section className="tests-section" id="triagens">
-        <div className="section-heading"><div><span className="section-index">02 — Triagens</span><h2>Um primeiro olhar, com critérios claros.</h2></div><p>As respostas ficam apenas neste navegador e não são enviadas ao Instituto. Use o resumo para organizar uma conversa clínica.</p></div>
-        <div className="test-grid">
-          {testCards.map((test, index) => <article className={test.active ? "test-card active" : "test-card"} key={test.slug}>
-            <div className="test-meta"><span>{String(index + 1).padStart(2, "0")}</span><span>{test.time}</span></div><h3>{test.title}</h3><p>{test.description}</p>
-            {test.active ? <button type="button" onClick={() => openTest(test.slug)}>Iniciar triagem <span aria-hidden="true">↗</span></button> : <span className="soon">Em breve</span>}
-          </article>)}
+        <div className="section-shell">
+          <div className="section-label centered"><span>TRIAGENS</span><i /></div>
+          <h2>Cada quadro tem o seu próprio traço.</h2>
+          <p className="section-lead centered">As respostas ficam apenas neste navegador e não são enviadas ao Instituto. Use o resumo para organizar uma conversa clínica.</p>
+          <div className="test-grid">
+            {testCards.map((test, index) => <article className={`test-card ${test.slug}`} key={test.slug}>
+              <div className="test-meta"><span>DISPONÍVEL · {test.time}</span><small>{String(index + 1).padStart(2, "0")}</small></div>
+              <SignalTrace variant={test.slug} />
+              <h3>{test.title}</h3><p>{test.description}</p>
+              <div className="test-card-action"><span>{test.slug === "tdah" ? "dispersão · impulsividade" : test.slug === "ansiedade" ? "antecipação · tensão" : test.slug === "depressao" ? "humor · energia" : "oscilação · ciclos"}</span><button type="button" onClick={() => openTest(test.slug)}>Iniciar <b aria-hidden="true">→</b></button></div>
+            </article>)}
+          </div>
+          <p className="legal-line">Rastreio não é diagnóstico. A avaliação considera entrevista, história, contexto e diagnósticos diferenciais.</p>
         </div>
-        <p className="legal-line"><span aria-hidden="true">ⓘ</span> Rastreio não é diagnóstico. A avaliação considera entrevista, história, contexto e diagnósticos diferenciais.</p>
       </section>
 
       <section className="about-section" id="sobre">
-        <div className="doctor-portrait" aria-label="Espaço reservado para retrato institucional"><div className="portrait-monogram">MG</div><div className="portrait-label">Atendimento médico<br /><small>online e individualizado</small></div></div>
-        <div className="about-copy"><span className="section-index">03 — Dr. Marcel Gonçalves</span><h2>Conhecimento técnico.<br /><em>Presença humana.</em></h2><p>Médico pós-graduado em Psiquiatria pelo Hospital Israelita Albert Einstein, com base sólida em Clínica Médica, experiência no manejo de casos complexos e atendimento centrado no paciente.</p><blockquote>“Visão médica integral, com escuta e acompanhamento real.”</blockquote><div className="credentials"><div><span>Abordagem</span><strong>Diagnóstico responsável</strong><small>Sem automatismos ou generalizações</small></div><div><span>Disponibilidade</span><strong>Segunda a sexta</strong><small>Das 08:00 às 18:00</small></div></div><a className="text-link" href="#agendar">Conversar sobre uma consulta →</a></div>
+        <div className="section-shell about-grid">
+          <div className="doctor-portrait" aria-label="Espaço reservado para retrato institucional"><div><span>retrato</span><strong>Dr. Marcel Gonçalves</strong><small>1200 × 1500</small></div></div>
+          <div className="about-copy"><span className="about-kicker">CONHECIMENTO TÉCNICO. PRESENÇA HUMANA.</span><h2>Dr. Marcel<br />Gonçalves</h2><p className="doctor-role">Médico psiquiatra <i /> <span>CRM-BA 47156</span></p><p>Médico pós-graduado em Psiquiatria pelo Hospital Israelita Albert Einstein, com base sólida em Clínica Médica, experiência no manejo de casos complexos e atendimento centrado no paciente.</p><blockquote>“Visão médica integral, com escuta e acompanhamento real.”</blockquote><div className="credentials"><div><span>REGISTRO</span><strong>CRM-BA 47156</strong><small>Bahia · Brasil</small></div><div><span>FORMAÇÃO</span><strong>Pós-graduação em Psiquiatria</strong><small>Hospital Israelita Albert Einstein</small></div></div><a className="button primary" href="#agendar">Conversar sobre uma consulta</a></div>
+        </div>
       </section>
 
       <section className="legal-section" id="legal">
-        <span className="section-index">04 — Sobre os testes</span><div><h2>Informação responsável também é cuidado.</h2><p>A triagem de TDAH preserva os eixos clínicos do DIVA‑5: sinais atuais, história infantil, duração e prejuízo. Depressão e bipolaridade são avaliadas em módulos próprios porque o DIVA‑5 não investiga outros transtornos psiquiátricos.</p></div>
-        <ul><li>O DIVA‑5 formal é uma entrevista diagnóstica conduzida por profissional e não é reproduzido aqui.</li><li>GAD‑7 e PHQ‑9 medem a frequência de sintomas nas últimas duas semanas.</li><li>A triagem de bipolaridade segue os eixos de sintomas, simultaneidade e prejuízo do MDQ.</li><li>Nenhum resultado fecha diagnóstico, recomenda ou altera medicação.</li><li>Em risco imediato, ligue 192 ou procure uma emergência. Apoio emocional: CVV 188.</li></ul>
+        <div className="section-shell">
+          <div className="section-label centered muted-label"><span>SOBRE OS TESTES</span><i /></div>
+          <h2>Informação responsável também é cuidado.</h2>
+          <p className="section-lead centered">O que cada instrumento é — e o que ele não é.</p>
+          <ScrollSteps className="method-list" accent="#6E7FA8" steps={[["01","Triagem de TDAH","Estruturada a partir dos eixos de uma avaliação clínica de adultos — não é a entrevista DIVA‑5 nem reproduz seu conteúdo protegido."],["02","DIVA‑5 formal","É uma entrevista diagnóstica conduzida por profissional habilitado, em consulta."],["03","GAD‑7, PHQ‑9 e rastreio de bipolaridade","Organizam frequência, intensidade, simultaneidade e prejuízo para apoiar uma conversa clínica."],["04","Sem conduta automática","Nenhum resultado fecha diagnóstico, recomenda, inicia ou altera medicação."]]} />
+          <div className="emergency-card"><div><span>RISCO IMEDIATO</span><h3>Se houver risco à vida, busque ajuda agora.</h3><p>Emergência não espera triagem. Ligue ou vá ao serviço de urgência mais próximo.</p></div><div><a href="tel:192">SAMU 192 <small>LIGAR</small></a><a href="tel:188">CVV 188 <small>APOIO 24H</small></a></div></div>
+        </div>
       </section>
 
-      <section className="booking-section" id="agendar"><span className="section-index light">05 — Próximo passo</span><h2>Você não precisa entender tudo sozinho.</h2><p>Se algo tem causado sofrimento ou interferido na sua rotina, uma conversa cuidadosa pode ajudar.</p><a className="button ivory" href={whatsappUrl} target="_blank" rel="noreferrer">Agendar pelo WhatsApp <span aria-hidden="true">↗</span></a><small>Atendimento por mensagem · Segunda a sexta, 08:00–18:00</small></section>
+      <section className="booking-section" id="agendar"><div className="section-shell"><h2>Você não precisa entender tudo sozinho.</h2><p>Se algo tem causado sofrimento ou interferido na sua rotina, uma conversa cuidadosa pode ajudar.</p><div className="booking-card"><span className="availability"><i /> Resposta no mesmo dia útil</span><strong>Mande uma mensagem. A primeira conversa já organiza o próximo passo.</strong><a href={whatsappUrl} target="_blank" rel="noreferrer">Agendar pelo WhatsApp <span aria-hidden="true">→</span></a><div><span>Sigilo médico</span><span>Consulta 100% online</span><span>Seg a sex · 08:00–18:00</span></div></div></div></section>
 
-      <footer><div className="brand footer-brand"><span className="brand-mark">IM</span><span><strong>Instituto</strong><small>Dr. Marcel Gonçalves</small></span></div><div><span>Navegação</span><a href="#instituto">O Instituto</a><a href="#triagens">Triagens</a><a href="#sobre">Dr. Marcel</a></div><div><span>Contato</span><a href={whatsappUrl}>WhatsApp</a><a href="https://instagram.com/drmarcelgoncalves" target="_blank" rel="noreferrer">Instagram</a><small>CRM-BA 47156</small></div><p>© 2026 Instituto Dr. Marcel Gonçalves.<br />CNPJ 58.322.492/0001-11 · Conteúdo informativo.</p></footer>
+      <footer><div className="section-shell footer-grid"><div><strong>Instituto Dr. Marcel Gonçalves</strong><p>Psiquiatria online com profundidade clínica, escuta qualificada e cuidado real.</p></div><div><span>Navegação</span><a href="#instituto">O Instituto</a><a href="#triagens">Triagens</a><a href="#sobre">Dr. Marcel</a><a href="#legal">Sobre os testes</a></div><div><span>Contato</span><a href={whatsappUrl}>WhatsApp</a><a href="https://instagram.com/drmarcelgoncalves" target="_blank" rel="noreferrer">Instagram</a><small>CRM-BA 47156</small></div></div><div className="footer-bottom"><span>© 2026 Instituto Dr. Marcel Gonçalves</span><span>CNPJ 58.322.492/0001-11 · Conteúdo informativo</span></div></footer>
 
       {activeTest && <div className="test-overlay" role="dialog" aria-modal="true" aria-labelledby="test-title">
         <div className="test-shell"><div className="test-topbar"><span className="brand compact"><span className="brand-mark">IM</span><span><strong>Instituto</strong><small>Dr. Marcel</small></span></span><button type="button" onClick={closeTest} aria-label="Fechar triagem">Fechar ×</button></div><div className="progress-track" aria-label={`Progresso: ${Math.round(progress)}%`}><span style={{ width: `${progress}%` }} /></div>
