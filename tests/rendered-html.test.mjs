@@ -39,6 +39,7 @@ test("uses the Hostinger-compatible Next.js runtime", async () => {
   assert.match(packageJson, /"start": "next start"/);
   assert.doesNotMatch(packageJson, /vinext|wrangler|cloudflare/i);
   assert.match(nextConfig, /poweredByHeader: false/);
+  assert.match(nextConfig, /ALLOWED_DEV_ORIGINS/);
   assert.match(healthRoute, /status: "ok"/);
   assert.match(db, /drizzle-orm\/mysql2/);
   assert.doesNotMatch(db, /cloudflare:workers|D1/);

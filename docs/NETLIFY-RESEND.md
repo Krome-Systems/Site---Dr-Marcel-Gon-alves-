@@ -28,7 +28,8 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_WHATSAPP_NUMBER=5571993622929
 RESEND_API_KEY=COLE_A_CHAVE_NOVA_AQUI
 RESULT_FROM_EMAIL=Instituto Dr. Marcel <onboarding@resend.dev>
-RESULT_REPLY_TO=SEU_EMAIL_DA_CONTA_RESEND
+# Opcional: use somente se você já souber qual e-mail receberá respostas.
+# RESULT_REPLY_TO=seu-email-real@exemplo.com
 ```
 
 O `.env.local` já é ignorado pelo Git e não deve ser enviado ao GitHub.
@@ -72,7 +73,7 @@ NEXT_PUBLIC_SITE_URL=https://SEU-SITE.netlify.app
 NEXT_PUBLIC_WHATSAPP_NUMBER=5571993622929
 RESEND_API_KEY=COLE_A_CHAVE_NOVA_AQUI
 RESULT_FROM_EMAIL=Instituto Dr. Marcel <onboarding@resend.dev>
-RESULT_REPLY_TO=SEU_EMAIL_DA_CONTA_RESEND
+# Opcional: RESULT_REPLY_TO=seu-email-real@exemplo.com
 ```
 
 Marque `RESEND_API_KEY` como valor secreto, se essa opção estiver disponível. Depois de alterar variáveis, faça um novo deploy em **Deploys > Trigger deploy > Clear cache and deploy site**.
