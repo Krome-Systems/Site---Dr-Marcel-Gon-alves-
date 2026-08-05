@@ -192,9 +192,18 @@ export async function createResultPdf(report: ResultReport, providedFont?: strin
   return document;
 }
 
+export function resultPdfFilename(report: ResultReport) {
+  const date = report.generatedAt.slice(0, 10);
+  const slug = report.test
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `resumo-${slug}-${date}.pdf`;
+}
+
 export async function downloadResultPdf(report: ResultReport) {
   const document = await createResultPdf(report);
-  const date = report.generatedAt.slice(0, 10);
-  const slug = report.test.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  document.save(`resumo-${slug}-${date}.pdf`);
+  document.save(resultPdfFilename(report));
 }

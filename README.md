@@ -85,6 +85,8 @@ Não configure `COREPACK_INTEGRITY_KEYS=0`: desativar essa verificação criptog
 
 Para uma demonstração por upload manual, execute `pnpm build:static`. O comando cria a pasta `out`, contendo somente HTML, CSS e JavaScript prontos para arrastar no Netlify Drop. Esse modo é exclusivo para demonstração e não pode enviar e-mails, pois não possui uma função de servidor para proteger a chave privada. Para testar o envio na Netlify, conecte o repositório pelo painel, mantenha o adaptador OpenNext e cadastre as mesmas variáveis privadas do Resend. O build normal da Hostinger continua sendo `pnpm build` e `pnpm start`.
 
+O endpoint gera o mesmo PDF disponível para download e o envia como anexo. Para configurar o fluxo sem domínio e depois migrar para produção, siga [`docs/NETLIFY-RESEND.md`](docs/NETLIFY-RESEND.md).
+
 ## Banco de dados
 
 A camada de dados usa Drizzle ORM com MySQL/MariaDB. O schema permanece vazio intencionalmente: o envio por e-mail não grava respostas no banco. Dados de triagem são dados sensíveis e só devem ser persistidos depois da definição de consentimento, finalidade, retenção, controle de acesso e demais requisitos da LGPD.

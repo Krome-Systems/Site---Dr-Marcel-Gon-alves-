@@ -18,7 +18,7 @@ test("contains the institutional content and clinical safeguards", async () => {
   assert.match(page, /Este resultado não é um diagnóstico/);
   assert.match(page, /CVV 188/);
   assert.match(page, /Baixar resumo em PDF/);
-  assert.match(page, /Enviar resumo/);
+  assert.match(page, /Enviar PDF/);
   assert.match(page, /Não é necessário criar conta/);
   assert.match(page, /site não armazena minhas respostas/);
   assert.match(page, /NEXT_PUBLIC_WHATSAPP_NUMBER/);
@@ -77,6 +77,8 @@ test("keeps email credentials on the server and validates the delivery route", a
   assert.match(route, /rateLimitAllows/);
   assert.match(route, /Cache-Control/);
   assert.match(route, /"User-Agent": "instituto-dr-marcel\/1\.0"/);
+  assert.match(route, /attachments/);
+  assert.match(route, /createResultPdf/);
   assert.match(envExample, /RESEND_API_KEY=/);
   assert.doesNotMatch(envExample, /NEXT_PUBLIC_RESEND/);
 });

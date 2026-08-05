@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_STATIC_EXPORT: staticExport ? "1" : "0",
   },
+  outputFileTracingIncludes: {
+    "/api/send-result": ["./public/fonts/Roboto-Variable.ttf"],
+  },
   ...(staticExport
     ? {
         output: "export" as const,

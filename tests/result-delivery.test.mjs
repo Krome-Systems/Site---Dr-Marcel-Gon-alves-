@@ -45,4 +45,5 @@ test("escapes report content before building the email HTML", () => {
   const html = delivery.buildResultEmailHtml({ ...validReport, summary: "<script>alert('x')</script>" });
   assert.doesNotMatch(html, /<script>/);
   assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /PDF está anexado/);
 });

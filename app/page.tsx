@@ -613,7 +613,7 @@ export default function Home() {
       const body = await response.json() as { error?: string };
       if (!response.ok) throw new Error(body.error || "Não foi possível enviar o resumo.");
       setDeliveryStatus("sent");
-      setDeliveryMessage("Resumo enviado. Confira também a caixa de spam.");
+      setDeliveryMessage("PDF enviado. Confira também a caixa de spam.");
     } catch (error) {
       setDeliveryStatus("error");
       setDeliveryMessage(error instanceof Error ? error.message : "Não foi possível enviar o resumo.");
@@ -736,13 +736,13 @@ export default function Home() {
               <section className="result-save-card" aria-labelledby="save-result-title">
                 <span className="result-save-index">Seu resumo</span>
                 <h3 id="save-result-title">Guarde para levar à consulta.</h3>
-                <p>Baixe o PDF agora ou receba uma cópia no seu e-mail. Não é necessário criar conta.</p>
+                <p>Baixe o PDF agora ou receba o arquivo anexado no seu e-mail. Não é necessário criar conta.</p>
                 <button className="download-button" type="button" onClick={handlePdfDownload} disabled={pdfBusy}>
                   <span aria-hidden="true">↓</span><span><strong>{pdfBusy ? "Preparando PDF..." : "Baixar resumo em PDF"}</strong><small>Gerado neste dispositivo</small></span>
                 </button>
                 {emailDeliveryAvailable ? <><div className="save-divider"><span>ou envie por e-mail</span></div><form className="email-result-form" onSubmit={handleEmailDelivery}>
                   <label htmlFor="result-email">Seu e-mail</label>
-                  <div className="email-field-row"><input id="result-email" type="email" inputMode="email" autoComplete="email" placeholder="voce@exemplo.com" required maxLength={254} value={resultEmail} onChange={(event) => { setResultEmail(event.target.value); setDeliveryStatus("idle"); setDeliveryMessage(""); }} /><button type="submit" disabled={deliveryStatus === "sending" || deliveryStatus === "sent"}>{deliveryStatus === "sending" ? "Enviando..." : deliveryStatus === "sent" ? "Enviado ✓" : "Enviar resumo →"}</button></div>
+                  <div className="email-field-row"><input id="result-email" type="email" inputMode="email" autoComplete="email" placeholder="voce@exemplo.com" required maxLength={254} value={resultEmail} onChange={(event) => { setResultEmail(event.target.value); setDeliveryStatus("idle"); setDeliveryMessage(""); }} /><button type="submit" disabled={deliveryStatus === "sending" || deliveryStatus === "sent"}>{deliveryStatus === "sending" ? "Gerando e enviando..." : deliveryStatus === "sent" ? "Enviado ✓" : "Enviar PDF →"}</button></div>
                   <div className="honeypot" aria-hidden="true"><label htmlFor="website">Não preencha</label><input id="website" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></div>
                   <label className="email-consent"><input type="checkbox" checked={emailConsent} onChange={(event) => setEmailConsent(event.target.checked)} /><span>Concordo com o envio deste resumo ao e-mail informado. O site não armazena minhas respostas; o provedor de e-mail processa os dados somente para realizar a entrega.</span></label>
                   <p className={`delivery-message ${deliveryStatus}`} aria-live="polite">{deliveryMessage}</p>

@@ -1,9 +1,12 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { NextResponse } from "next/server";
 import {
   buildResultEmailHtml,
   buildResultEmailText,
   parseResultDeliveryPayload,
 } from "../../../lib/result-delivery";
+import { createResultPdf, resultPdfFilename } from "../../../lib/result-pdf";
 
 export const runtime = "nodejs";
 
@@ -78,6 +81,10 @@ export async function POST(request: Request) {
 
   let providerResponse: Response;
   try {
+    const font = await readFile(join(process.cwd(), "public", "fonts", "Roboto-Variable.ttf"), "base64");
+    const pdfDocument = await createResultPdf(payload.report, font);
+    const pdfContent = Buffer.from(pdfDocument.output("arraybuffer")).toString("base64");
+
     providerResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -92,6 +99,10 @@ export async function POST(request: Request) {
         subject: `Seu resumo de triagem - ${payload.report.test}`,
         html: buildResultEmailHtml(payload.report),
         text: buildResultEmailText(payload.report),
+        attachments: [{
+          content: pdfContent,
+          filename: resultPdfFilename(payload.report),
+        }],
         ...(process.env.RESULT_REPLY_TO ? { reply_to: process.env.RESULT_REPLY_TO } : {}),
       }),
       cache: "no-store",
