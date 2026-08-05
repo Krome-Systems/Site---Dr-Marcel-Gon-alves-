@@ -84,6 +84,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "Idempotency-Key": crypto.randomUUID(),
+        "User-Agent": "instituto-dr-marcel/1.0",
       },
       body: JSON.stringify({
         from,

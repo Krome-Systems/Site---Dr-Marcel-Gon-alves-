@@ -76,6 +76,7 @@ test("keeps email credentials on the server and validates the delivery route", a
   assert.match(route, /requestOriginIsAllowed/);
   assert.match(route, /rateLimitAllows/);
   assert.match(route, /Cache-Control/);
+  assert.match(route, /"User-Agent": "instituto-dr-marcel\/1\.0"/);
   assert.match(envExample, /RESEND_API_KEY=/);
   assert.doesNotMatch(envExample, /NEXT_PUBLIC_RESEND/);
 });
