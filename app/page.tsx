@@ -693,17 +693,54 @@ export default function Home() {
       <section className="about-section" id="sobre">
         <div className="section-shell about-grid">
           <div className="doctor-portrait"><img src="/dr-marcel.png" alt="Dr. Marcel Gonçalves" width={1122} height={1402} loading="lazy" decoding="async" /></div>
-          <div className="about-copy"><span className="about-kicker">CONHECIMENTO TÉCNICO. PRESENÇA HUMANA.</span><h2>Dr. Marcel<br />Gonçalves</h2><p className="doctor-role">Médico <i /> <span>CRM-BA 47156</span></p><p>Médico com pós-graduação em Psiquiatria pelo Hospital Israelita Albert Einstein, base sólida em Clínica Médica, experiência no manejo de casos complexos e atendimento centrado no paciente.</p><blockquote>“Visão médica integral, com escuta e acompanhamento real.”</blockquote><div className="credentials"><div><span>REGISTRO</span><strong>CRM-BA 47156</strong><small>Bahia · Brasil</small></div><div><span>FORMAÇÃO</span><strong>Pós-graduação em Psiquiatria</strong><small>Hospital Israelita Albert Einstein</small></div></div><a className="button primary" href="#agendar">Conversar sobre uma consulta</a></div>
+          <div className="about-copy"><span className="about-kicker">CONHECIMENTO TÉCNICO. PRESENÇA HUMANA.</span><h2>Dr. Marcel<br />Gonçalves</h2><p className="doctor-role">Médico <i /> <span>CRM-BA 47156</span></p><p>Sou Dr. Marcel dos Santos Gonçalves, médico com pós-graduação em Psiquiatria pelo Hospital Israelita Albert Einstein. Atuo no acompanhamento de pessoas que enfrentam problemas relacionados à saúde mental, dependência química e outros comportamentos de difícil controle.</p><blockquote>“Cuidado construído junto com o paciente, considerando sua realidade, seus sintomas e seus objetivos.”</blockquote><div className="credentials"><div><span>REGISTRO</span><strong>CRM-BA 47156</strong><small>Bahia · Brasil</small></div><div><span>FORMAÇÃO</span><strong>Pós-graduação em Psiquiatria</strong><small>Hospital Israelita Albert Einstein</small></div></div><a className="button primary" href="#agendar">Conversar sobre uma consulta</a></div>
         </div>
       </section>
 
       <section className="legal-section" id="dependencia">
         <div className="section-shell">
           <div className="section-label centered muted-label"><span>DEPENDÊNCIA E COMPORTAMENTO ADITIVO</span></div>
-          <h2>Cuidado amplo para uma condição complexa.</h2>
-          <p className="section-lead centered">A dependência não deve ser vista apenas como falta de força de vontade. O acompanhamento considera aspectos biológicos, psicológicos, familiares, sociais e comportamentais.</p>
-          <ScrollSteps className="method-list" accent="#6E7FA8" steps={[["01","Álcool e outras substâncias","Avaliação e acompanhamento relacionados ao uso de álcool, cocaína, crack, maconha, tabaco, nicotina, múltiplas drogas e outras substâncias psicoativas."],["02","Comportamentos aditivos","Cuidado para uso excessivo ou descontrolado de jogos online, videogames, apostas e outros comportamentos compulsivos que prejudicam a vida cotidiana."],["03","Saúde mental e comorbidades","A avaliação também investiga ansiedade, depressão, pânico, transtorno bipolar, alterações do sono, irritabilidade, impulsividade e outros quadros associados."],["04","Tratamento individualizado","Planejamento terapêutico, avaliação medicamentosa quando indicada, prevenção de recaídas, orientação à família e continuidade do cuidado após clínicas ou comunidades terapêuticas."]]} />
-          <div className="care-callout"><span>PROCURAR AJUDA É O COMEÇO DE UMA MUDANÇA POSSÍVEL</span><h3>Quando o uso ou o comportamento ocupa um espaço maior do que deveria, uma avaliação pode ajudar.</h3><p>O trabalho é construir, junto com cada paciente, uma estratégia de cuidado que considere sua realidade, seus sintomas e seus objetivos.</p><a className="button primary" href={whatsappUrl} target="_blank" rel="noreferrer">Falar com o Dr. Marcel pelo WhatsApp</a></div>
+          <h2>Cuidado que considera a pessoa por inteiro.</h2>
+          <p className="section-lead centered">O uso problemático de álcool, drogas, cigarro, jogos ou apostas não deve ser visto apenas como falta de força de vontade. É uma condição complexa, que pode envolver aspectos biológicos, emocionais, familiares, sociais e comportamentais.</p>
+
+          <div className="dependence-grid">
+            <article>
+              <span>01</span>
+              <h3>Dependência química</h3>
+              <p>Avaliação e acompanhamento de problemas relacionados ao uso de álcool, cocaína, crack, maconha, tabaco, nicotina, múltiplas drogas e outras substâncias psicoativas.</p>
+              <small>Álcool · substâncias · nicotina</small>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Comportamentos aditivos</h3>
+              <p>Cuidado para situações em que jogos online, videogames, apostas e outros comportamentos compulsivos começam a prejudicar a vida pessoal, familiar, profissional ou financeira.</p>
+              <small>Jogos · apostas · compulsões</small>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Saúde mental associada</h3>
+              <p>A avaliação também considera ansiedade, depressão, pânico, transtorno bipolar, alterações do sono, irritabilidade, impulsividade e outros quadros que podem estar associados.</p>
+              <small>Comorbidades · contexto · história</small>
+            </article>
+          </div>
+
+          <div className="care-path">
+            <div className="care-path-copy">
+              <span>ACOMPANHAMENTO INDIVIDUALIZADO</span>
+              <h3>Entender o que mantém o problema também faz parte do cuidado.</h3>
+              <p>Cada pessoa chega em um momento diferente. Por isso, o acompanhamento considera sua história, o padrão de consumo, tratamentos anteriores, recaídas, contexto familiar, condições clínicas, medicamentos em uso e seus próprios objetivos.</p>
+              <p>O cuidado também pode dar continuidade ao trabalho iniciado em clínicas de recuperação, comunidades terapêuticas e outros serviços de saúde mental.</p>
+            </div>
+            <div className="care-path-points" aria-label="Possibilidades de acompanhamento">
+              <span>Avaliação médica</span>
+              <span>Planejamento terapêutico</span>
+              <span>Acompanhamento da evolução</span>
+              <span>Avaliação medicamentosa, quando indicada</span>
+              <span>Prevenção de recaídas</span>
+              <span>Orientação ao paciente e à família</span>
+            </div>
+          </div>
+
           <div className="emergency-card"><div><span>RISCO IMEDIATO</span><h3>Se houver risco à vida, busque ajuda agora.</h3><p>Uma emergência não deve esperar uma consulta agendada. Ligue ou vá ao serviço de urgência mais próximo.</p></div><div><a href="tel:192">SAMU 192 <small>LIGAR</small></a><a href="tel:188">CVV 188 <small>APOIO 24H</small></a></div></div>
         </div>
       </section>

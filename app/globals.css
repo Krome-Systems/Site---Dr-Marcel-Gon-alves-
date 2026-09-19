@@ -159,11 +159,24 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .method-list article { padding-top: 22px; padding-bottom: 22px; }
 .method-list h3 { font-size: clamp(17px,1.5vw,19px); }
 .method-list p { margin-top: 8px; }
-.care-callout { max-width: 860px; margin: 46px auto 0; padding: clamp(28px,4vw,44px); border: 1px solid #cad9ed; border-radius: 28px; background: linear-gradient(145deg,#f2f6fc,#fff 72%); box-shadow: 0 32px 70px -52px rgba(12,30,80,.52); }
-.care-callout > span { color: var(--blue); font-size: 10.5px; font-weight: 800; letter-spacing: .15em; }
-.care-callout h3 { max-width: 28ch; margin: 17px 0 0; font-size: clamp(24px,3vw,34px); line-height: 1.18; letter-spacing: -.03em; }
-.care-callout p { max-width: 60ch; margin: 16px 0 25px; color: var(--muted); font-size: 16px; line-height: 1.65; }
-.care-callout .button { width: fit-content; }
+.dependence-grid { margin-top: clamp(42px,6vw,68px); display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.dependence-grid article { min-height: 350px; padding: clamp(25px,3vw,36px); display: flex; flex-direction: column; border: 1px solid #d7e1ef; border-radius: 26px; background: linear-gradient(155deg,#fff,#f4f7fc); box-shadow: 0 28px 60px -48px rgba(12,30,80,.5); }
+.dependence-grid article:nth-child(2) { color: #fff; border-color: #17264a; background: linear-gradient(155deg,#132143,var(--navy)); box-shadow: 0 32px 66px -44px rgba(10,35,96,.72); }
+.dependence-grid article > span { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #cbd8eb; border-radius: 50%; color: var(--blue); font-size: 11px; font-weight: 800; }
+.dependence-grid article:nth-child(2) > span { color: var(--blue-soft); border-color: rgba(196,214,255,.35); }
+.dependence-grid h3 { margin: auto 0 14px; font-size: clamp(22px,2.2vw,29px); line-height: 1.1; letter-spacing: -.035em; }
+.dependence-grid p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.68; }
+.dependence-grid article:nth-child(2) p { color: #b9c5da; }
+.dependence-grid small { margin-top: 26px; padding-top: 18px; border-top: 1px solid #dde5f0; color: #7b8799; font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.dependence-grid article:nth-child(2) small { color: #8394b6; border-top-color: rgba(255,255,255,.12); }
+.care-path { margin-top: 18px; padding: clamp(30px,4.6vw,54px); display: grid; grid-template-columns: 1.25fr .75fr; gap: clamp(34px,5vw,72px); align-items: center; border: 1px solid #d8e2ef; border-radius: 30px; background: #f7f9fc; }
+.care-path-copy > span { color: var(--blue); font-size: 10.5px; font-weight: 800; letter-spacing: .15em; }
+.care-path-copy h3 { max-width: 24ch; margin: 17px 0 20px; font-size: clamp(27px,3.2vw,40px); line-height: 1.13; letter-spacing: -.04em; }
+.care-path-copy p { max-width: 62ch; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+.care-path-copy p + p { margin-top: 13px; }
+.care-path-points { display: grid; }
+.care-path-points span { position: relative; padding: 13px 0 13px 25px; border-bottom: 1px solid #dbe3ee; color: #3e4654; font-size: 13px; font-weight: 650; line-height: 1.4; }
+.care-path-points span::before { content: ""; position: absolute; top: 20px; left: 2px; width: 7px; height: 7px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 5px rgba(10,102,232,.09); }
 .emergency-card { position: relative; overflow: hidden; max-width: 860px; margin: 50px auto 0; padding: clamp(26px,3.2vw,40px); display: grid; grid-template-columns: 1fr 230px; gap: 30px; align-items: center; border: 1px solid rgba(255,107,107,.3); border-radius: 28px; color: #fff; background: linear-gradient(158deg,#171a21,var(--black) 62%); box-shadow: 0 34px 78px -46px rgba(255,86,86,.6); }
 .emergency-card > div:first-child > span { color: #ff9c9c; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
 .emergency-card h3 { max-width: 21ch; margin: 16px 0 0; font-size: clamp(22px,2.3vw,28px); line-height: 1.2; }
@@ -323,6 +336,9 @@ footer { padding: 62px 0 28px; color: #a9b4c8; background: var(--black); border-
   .test-card { min-height: 340px; padding: 24px; }
   .credentials { grid-template-columns: 1fr; }
   .credentials > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
+  .dependence-grid { grid-template-columns: 1fr; }
+  .dependence-grid article { min-height: 300px; }
+  .care-path { grid-template-columns: 1fr; }
   .emergency-card { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .footer-grid > div:first-child { grid-column: 1 / -1; }
