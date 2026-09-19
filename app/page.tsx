@@ -18,14 +18,17 @@ import { downloadResultPdf } from "../lib/result-pdf";
 import type { ResultReport } from "../lib/result-report";
 
 type TestSlug = "tdah" | "ansiedade" | "depressao" | "bipolar";
+type CareSlug = TestSlug | "dependencia-quimica" | "dependencia-alcoolica";
 type ModalStep = "intro" | "questions" | "context" | "result";
 type DeliveryStatus = "idle" | "sending" | "sent" | "error";
 
-const testCards = [
-  { slug: "tdah" as const, title: "TDAH em adultos", description: "Organize sinais atuais, lembranças da infância e impactos na vida cotidiana.", time: "8–12 min", active: true },
-  { slug: "ansiedade" as const, title: "Ansiedade", description: "Observe a frequência de sintomas de ansiedade nas últimas duas semanas.", time: "2–3 min", active: true },
-  { slug: "depressao" as const, title: "Depressão", description: "Observe humor, energia, sono e interesse nas últimas duas semanas.", time: "3–4 min", active: true },
-  { slug: "bipolar" as const, title: "Sinais de bipolaridade", description: "Revise períodos marcantes de energia, sono, humor e impulsividade.", time: "5–7 min", active: true },
+const careCards: Array<{ slug: CareSlug; title: string; description: string; signals: string }> = [
+  { slug: "tdah", title: "TDAH em adultos", description: "Avaliação de desatenção, impulsividade, organização e impactos na vida adulta.", signals: "atenção · impulsividade" },
+  { slug: "ansiedade", title: "Ansiedade e pânico", description: "Cuidado para sintomas de ansiedade, crises de pânico, tensão e preocupação persistente.", signals: "antecipação · tensão" },
+  { slug: "depressao", title: "Depressão", description: "Avaliação de alterações de humor, energia, sono, interesse e funcionamento diário.", signals: "humor · energia" },
+  { slug: "bipolar", title: "Transtorno bipolar", description: "Investigação médica de períodos de oscilação de humor, energia, sono e impulsividade.", signals: "oscilação · ciclos" },
+  { slug: "dependencia-quimica", title: "Dependência química", description: "Acompanhamento relacionado ao uso de cocaína, crack, maconha, nicotina e outras substâncias.", signals: "substâncias · recaídas" },
+  { slug: "dependencia-alcoolica", title: "Dependência de álcool", description: "Cuidado individualizado para quem percebe perda de controle, prejuízos ou recaídas com o álcool.", signals: "álcool · recuperação" },
 ];
 
 const frequencyOptions = [
@@ -46,19 +49,21 @@ const traceBars = [0.22, 0.82, 0.35, 0.95, 0.48, 0.72, 0.3, 0.88, 0.56, 1, 0.4, 
 const depressaoBars = [1, 0.97, 0.93, 0.88, 0.84, 0.79, 0.75, 0.7, 0.66, 0.61, 0.57, 0.52];
 const bipolarBars = [0.66, 0.78, 0.9, 1, 0.9, 0.78, 0.66, 0.78, 0.9, 1, 0.9, 0.78];
 
-function traceShape(variant: TestSlug) {
+function traceShape(variant: CareSlug) {
   if (variant === "depressao") return depressaoBars;
   if (variant === "bipolar") return bipolarBars;
+  if (variant === "dependencia-quimica") return [0.28, 0.52, 0.86, 0.42, 0.95, 0.62, 0.3, 0.78, 0.48, 1, 0.58, 0.35];
+  if (variant === "dependencia-alcoolica") return [0.24, 0.38, 0.56, 0.76, 0.92, 1, 0.92, 0.76, 0.56, 0.38, 0.24, 0.16];
   return traceBars;
 }
 
-function traceDelay(variant: TestSlug, index: number) {
+function traceDelay(variant: CareSlug, index: number) {
   if (variant === "depressao") return `${index * -0.28}s`;
   if (variant === "bipolar") return index < 6 ? `${index * -0.04}s` : `${-1 - (index - 6) * 0.04}s`;
   return `${index * -0.09}s`;
 }
 
-function SignalTrace({ variant }: { variant: TestSlug }) {
+function SignalTrace({ variant }: { variant: CareSlug }) {
   return <div className={`signal-trace ${variant}`} aria-hidden="true">
     {traceShape(variant).map((height, index) => <span key={`${variant}-${index}`} style={{ "--bar-height": height, "--bar-delay": traceDelay(variant, index) } as CSSProperties} />)}
   </div>;
@@ -408,6 +413,7 @@ export default function Home() {
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") || "5571993622929";
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Olá, gostaria de saber mais sobre uma consulta com o Dr. Marcel.")}`;
+  const careWhatsappUrl = (care: string) => `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Olá, gostaria de saber mais sobre o acompanhamento para ${care} com o Dr. Marcel.`)}`;
   const emailDeliveryAvailable = process.env.NEXT_PUBLIC_STATIC_EXPORT !== "1";
 
   const adhdResult = useMemo(
@@ -640,7 +646,7 @@ export default function Home() {
         <a className="brand" href="#inicio" aria-label="Instituto Dr. Marcel Gonçalves — início"><strong>Instituto</strong><span>Dr. Marcel Gonçalves</span></a>
         <button className="menu-button" type="button" aria-expanded={menuOpen} aria-label="Abrir menu" onClick={() => setMenuOpen(!menuOpen)}><span /><span /></button>
         <nav className={menuOpen ? "nav open" : "nav"} aria-label="Navegação principal" onClick={() => setMenuOpen(false)}>
-          <a href="#instituto">O Instituto</a><a href="#triagens">Triagens</a><a href="#sobre">Dr. Marcel</a><a href="#legal">Sobre os testes</a>
+          <a href="#instituto">O Instituto</a><a href="#atuacao">Áreas de cuidado</a><a href="#sobre">Dr. Marcel</a><a href="#dependencia">Dependência e cuidado</a>
           <a className="nav-cta" href="#agendar">Agendar</a>
         </nav>
       </header>
@@ -649,11 +655,11 @@ export default function Home() {
         <div className="hero-inner">
           <ParticleBrain />
           <div className="hero-copy">
-            <span className="eyebrow"><i /> Psiquiatria online · Adultos · Todo o Brasil</span>
+            <span className="eyebrow"><i /> Cuidado médico em saúde mental · Adultos · Todo o Brasil</span>
             <h1>Diagnóstico cuidadoso, sem rótulos apressados.</h1>
             <p>Escuta qualificada, raciocínio clínico e tratamento individualizado. O ruído vira leitura clínica — e a leitura clínica vira um plano.</p>
-            <div className="hero-actions"><a className="button primary" href="#triagens">Começar uma triagem</a><a className="button secondary" href="#sobre">Conheça o Dr. Marcel</a></div>
-            <small className="hero-note">Privado no seu dispositivo · Sem diagnóstico automático</small>
+            <div className="hero-actions"><a className="button primary" href={whatsappUrl} target="_blank" rel="noreferrer">Conversar pelo WhatsApp</a><a className="button secondary" href="#sobre">Conheça o Dr. Marcel</a></div>
+            <small className="hero-note">Atendimento individualizado · Consulta 100% online</small>
           </div>
         </div>
       </section>
@@ -662,48 +668,49 @@ export default function Home() {
         <div className="section-shell">
           <div className="section-label"><span>O INSTITUTO</span></div>
           <h2>Clareza começa quando você se sente <em>verdadeiramente ouvido.</em></h2>
-          <p className="section-lead">O Instituto aproxima informação responsável, autoconhecimento e cuidado psiquiátrico — diagnóstico cuidadoso, prescrição responsável e acompanhamento contínuo.</p>
+          <p className="section-lead">O Instituto aproxima informação responsável, autoconhecimento e cuidado médico em saúde mental — diagnóstico cuidadoso, prescrição responsável e acompanhamento contínuo.</p>
           <ScrollSteps className="principles" steps={[["01","Escuta antes do rótulo","A história completa vem primeiro. O nome do quadro vem depois — e só quando se sustenta."],["02","Prescrição responsável","Cada conduta é explicada, revisada e ajustada junto com você — nunca no automático."],["03","Acompanhamento real","Tratamento é processo. O retorno faz parte do cuidado, não é exceção."]]} />
         </div>
       </section>
 
-      <section className="tests-section" id="triagens">
+      <section className="tests-section" id="atuacao">
         <div className="section-shell">
-          <div className="section-label centered"><span>TRIAGENS</span></div>
-          <h2>Cada quadro tem o seu próprio traço.</h2>
-          <p className="section-lead centered">As respostas ficam apenas neste navegador e não são enviadas ao Instituto. Use o resumo para organizar uma conversa clínica.</p>
+          <div className="section-label centered"><span>ÁREAS DE CUIDADO</span></div>
+          <h2>Cada pessoa precisa de uma escuta própria.</h2>
+          <p className="section-lead centered">Avaliação médica e acompanhamento individualizado para diferentes necessidades de saúde mental, dependência e comportamento.</p>
           <div className="test-grid">
-            {testCards.map((test, index) => <article className={`test-card ${test.slug}`} key={test.slug}>
-              <div className="test-meta"><span>DISPONÍVEL · {test.time}</span><small>{String(index + 1).padStart(2, "0")}</small></div>
-              <SignalTrace variant={test.slug} />
-              <h3>{test.title}</h3><p>{test.description}</p>
-              <div className="test-card-action"><span>{test.slug === "tdah" ? "dispersão · impulsividade" : test.slug === "ansiedade" ? "antecipação · tensão" : test.slug === "depressao" ? "humor · energia" : "oscilação · ciclos"}</span><button type="button" onClick={() => openTest(test.slug)}>Iniciar <b aria-hidden="true">→</b></button></div>
+            {careCards.map((care, index) => <article className={`test-card ${care.slug}`} key={care.slug}>
+              <div className="test-meta"><span>ACOMPANHAMENTO</span><small>{String(index + 1).padStart(2, "0")}</small></div>
+              <SignalTrace variant={care.slug} />
+              <h3>{care.title}</h3><p>{care.description}</p>
+              <div className="test-card-action"><span>{care.signals}</span><a href={careWhatsappUrl(care.title)} target="_blank" rel="noreferrer">Conversar <b aria-hidden="true">→</b></a></div>
             </article>)}
           </div>
-          <p className="legal-line">Rastreio não é diagnóstico. A avaliação considera entrevista, história, contexto e diagnósticos diferenciais.</p>
+          <p className="legal-line">O cuidado começa com uma avaliação individual da história, dos sintomas, do contexto familiar e dos tratamentos anteriores.</p>
         </div>
       </section>
 
       <section className="about-section" id="sobre">
         <div className="section-shell about-grid">
           <div className="doctor-portrait"><img src="/dr-marcel.png" alt="Dr. Marcel Gonçalves" width={1122} height={1402} loading="lazy" decoding="async" /></div>
-          <div className="about-copy"><span className="about-kicker">CONHECIMENTO TÉCNICO. PRESENÇA HUMANA.</span><h2>Dr. Marcel<br />Gonçalves</h2><p className="doctor-role">Médico psiquiatra <i /> <span>CRM-BA 47156</span></p><p>Médico pós-graduado em Psiquiatria pelo Hospital Israelita Albert Einstein, com base sólida em Clínica Médica, experiência no manejo de casos complexos e atendimento centrado no paciente.</p><blockquote>“Visão médica integral, com escuta e acompanhamento real.”</blockquote><div className="credentials"><div><span>REGISTRO</span><strong>CRM-BA 47156</strong><small>Bahia · Brasil</small></div><div><span>FORMAÇÃO</span><strong>Pós-graduação em Psiquiatria</strong><small>Hospital Israelita Albert Einstein</small></div></div><a className="button primary" href="#agendar">Conversar sobre uma consulta</a></div>
+          <div className="about-copy"><span className="about-kicker">CONHECIMENTO TÉCNICO. PRESENÇA HUMANA.</span><h2>Dr. Marcel<br />Gonçalves</h2><p className="doctor-role">Médico <i /> <span>CRM-BA 47156</span></p><p>Médico com pós-graduação em Psiquiatria pelo Hospital Israelita Albert Einstein, base sólida em Clínica Médica, experiência no manejo de casos complexos e atendimento centrado no paciente.</p><blockquote>“Visão médica integral, com escuta e acompanhamento real.”</blockquote><div className="credentials"><div><span>REGISTRO</span><strong>CRM-BA 47156</strong><small>Bahia · Brasil</small></div><div><span>FORMAÇÃO</span><strong>Pós-graduação em Psiquiatria</strong><small>Hospital Israelita Albert Einstein</small></div></div><a className="button primary" href="#agendar">Conversar sobre uma consulta</a></div>
         </div>
       </section>
 
-      <section className="legal-section" id="legal">
+      <section className="legal-section" id="dependencia">
         <div className="section-shell">
-          <div className="section-label centered muted-label"><span>SOBRE OS TESTES</span></div>
-          <h2>Informação responsável também é cuidado.</h2>
-          <p className="section-lead centered">O que cada instrumento é — e o que ele não é.</p>
-          <ScrollSteps className="method-list" accent="#6E7FA8" steps={[["01","Triagem de TDAH","Estruturada a partir dos eixos de uma avaliação clínica de adultos — não é a entrevista DIVA‑5 nem reproduz seu conteúdo protegido."],["02","DIVA‑5 formal","É uma entrevista diagnóstica conduzida por profissional habilitado, em consulta."],["03","GAD‑7, PHQ‑9 e rastreio de bipolaridade","Organizam frequência, intensidade, simultaneidade e prejuízo para apoiar uma conversa clínica."],["04","Sem conduta automática","Nenhum resultado fecha diagnóstico, recomenda, inicia ou altera medicação."]]} />
-          <div className="emergency-card"><div><span>RISCO IMEDIATO</span><h3>Se houver risco à vida, busque ajuda agora.</h3><p>Emergência não espera triagem. Ligue ou vá ao serviço de urgência mais próximo.</p></div><div><a href="tel:192">SAMU 192 <small>LIGAR</small></a><a href="tel:188">CVV 188 <small>APOIO 24H</small></a></div></div>
+          <div className="section-label centered muted-label"><span>DEPENDÊNCIA E COMPORTAMENTO ADITIVO</span></div>
+          <h2>Cuidado amplo para uma condição complexa.</h2>
+          <p className="section-lead centered">A dependência não deve ser vista apenas como falta de força de vontade. O acompanhamento considera aspectos biológicos, psicológicos, familiares, sociais e comportamentais.</p>
+          <ScrollSteps className="method-list" accent="#6E7FA8" steps={[["01","Álcool e outras substâncias","Avaliação e acompanhamento relacionados ao uso de álcool, cocaína, crack, maconha, tabaco, nicotina, múltiplas drogas e outras substâncias psicoativas."],["02","Comportamentos aditivos","Cuidado para uso excessivo ou descontrolado de jogos online, videogames, apostas e outros comportamentos compulsivos que prejudicam a vida cotidiana."],["03","Saúde mental e comorbidades","A avaliação também investiga ansiedade, depressão, pânico, transtorno bipolar, alterações do sono, irritabilidade, impulsividade e outros quadros associados."],["04","Tratamento individualizado","Planejamento terapêutico, avaliação medicamentosa quando indicada, prevenção de recaídas, orientação à família e continuidade do cuidado após clínicas ou comunidades terapêuticas."]]} />
+          <div className="care-callout"><span>PROCURAR AJUDA É O COMEÇO DE UMA MUDANÇA POSSÍVEL</span><h3>Quando o uso ou o comportamento ocupa um espaço maior do que deveria, uma avaliação pode ajudar.</h3><p>O trabalho é construir, junto com cada paciente, uma estratégia de cuidado que considere sua realidade, seus sintomas e seus objetivos.</p><a className="button primary" href={whatsappUrl} target="_blank" rel="noreferrer">Falar com o Dr. Marcel pelo WhatsApp</a></div>
+          <div className="emergency-card"><div><span>RISCO IMEDIATO</span><h3>Se houver risco à vida, busque ajuda agora.</h3><p>Uma emergência não deve esperar uma consulta agendada. Ligue ou vá ao serviço de urgência mais próximo.</p></div><div><a href="tel:192">SAMU 192 <small>LIGAR</small></a><a href="tel:188">CVV 188 <small>APOIO 24H</small></a></div></div>
         </div>
       </section>
 
       <section className="booking-section" id="agendar"><div className="section-shell"><h2>Você não precisa entender tudo sozinho.</h2><p>Se algo tem causado sofrimento ou interferido na sua rotina, uma conversa cuidadosa pode ajudar.</p><div className="booking-card"><span className="availability"><i /> Resposta no mesmo dia útil</span><strong>Mande uma mensagem. A primeira conversa já organiza o próximo passo.</strong><a href={whatsappUrl} target="_blank" rel="noreferrer">Agendar pelo WhatsApp <span aria-hidden="true">→</span></a><div><span>Sigilo médico</span><span>Consulta 100% online</span><span>Seg a sex · 08:00–18:00</span></div></div></div></section>
 
-      <footer><div className="section-shell footer-grid"><div><strong>Instituto Dr. Marcel Gonçalves</strong><p>Psiquiatria online com profundidade clínica, escuta qualificada e cuidado real.</p></div><div><span>Navegação</span><a href="#instituto">O Instituto</a><a href="#triagens">Triagens</a><a href="#sobre">Dr. Marcel</a><a href="#legal">Sobre os testes</a></div><div><span>Contato</span><a href={whatsappUrl}>WhatsApp</a><a href="https://instagram.com/drmarcelgoncalves" target="_blank" rel="noreferrer">Instagram</a><small>CRM-BA 47156</small></div></div><div className="footer-bottom"><span>© 2026 Instituto Dr. Marcel Gonçalves</span><span>CNPJ 58.322.492/0001-11 · Conteúdo informativo</span></div></footer>
+      <footer><div className="section-shell footer-grid"><div><strong>Instituto Dr. Marcel Gonçalves</strong><p>Cuidado médico em saúde mental, dependência química e comportamentos aditivos, com escuta qualificada e acompanhamento real.</p></div><div><span>Navegação</span><a href="#instituto">O Instituto</a><a href="#atuacao">Áreas de cuidado</a><a href="#sobre">Dr. Marcel</a><a href="#dependencia">Dependência e cuidado</a></div><div><span>Contato</span><a href={whatsappUrl}>WhatsApp</a><a href="https://instagram.com/drmarcelgoncalves" target="_blank" rel="noreferrer">Instagram</a><small>Médico · CRM-BA 47156</small></div></div><div className="footer-bottom"><span>© 2026 Instituto Dr. Marcel Gonçalves</span><span>CNPJ 58.322.492/0001-11 · Conteúdo informativo</span></div></footer>
 
       {activeTest && <div className="test-overlay" role="dialog" aria-modal="true" aria-labelledby="test-title">
         <div className="test-shell"><div className="test-topbar"><span className="brand compact"><span className="brand-mark">IM</span><span><strong>Instituto</strong><small>Dr. Marcel</small></span></span><button type="button" onClick={closeTest} aria-label="Fechar triagem">Fechar ×</button></div><div className="progress-track" aria-label={`Progresso: ${Math.round(progress)}%`}><span style={{ width: `${progress}%` }} /></div>

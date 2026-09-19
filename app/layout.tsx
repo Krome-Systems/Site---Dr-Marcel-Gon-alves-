@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const title = "Instituto Dr. Marcel Gonçalves | Psiquiatria humanizada";
-const description = "Psiquiatria com profundidade clínica, escuta qualificada e cuidado real. Triagens responsáveis e avaliação sem rótulos apressados.";
+const title = "Instituto Dr. Marcel Gonçalves | Saúde mental e dependência";
+const description = "Cuidado médico em saúde mental, dependência química, dependência de álcool e comportamentos aditivos, com escuta qualificada e acompanhamento individualizado.";
 const configuredSiteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const metadataBase = new URL(configuredSiteUrl);
